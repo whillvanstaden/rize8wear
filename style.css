@@ -1285,3 +1285,9 @@ button {
 .order-ribbon-fields { display:grid; gap:10px; }.order-ribbon-fields[hidden] { display:none; }
 @media(max-width:1000px){.cancer-layout{grid-template-columns:1fr;max-width:740px}.ribbon-guide{margin:0;align-self:auto}.ribbon-list{grid-template-columns:repeat(3,minmax(0,1fr))}.main-nav{gap:18px}.main-nav a{font-size:19px}}
 @media(max-width:520px){.cancer-grid{gap:12px}.ribbon-guide{padding:20px}.ribbon-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ribbon-guide h3{font-size:25px}}
+
+/* Center the men's cards while keeping the existing card sizes. */
+#men-clothing .featured-products { display:flex; flex-wrap:wrap; justify-content:center; }
+#men-clothing .featured-products > .product-card { flex:0 0 calc((100% - 42px) / 8); }
+@media(max-width:1100px){#men-clothing .featured-products > .product-card{flex-basis:calc((100% - 18px) / 4)}}
+@media(max-width:700px){#men-clothing .featured-products > .product-card{flex-basis:calc((100% - 8px) / 2)}}
