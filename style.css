@@ -1286,8 +1286,16 @@ button {
 @media(max-width:1000px){.cancer-layout{grid-template-columns:1fr;max-width:740px}.ribbon-guide{margin:0;align-self:auto}.ribbon-list{grid-template-columns:repeat(3,minmax(0,1fr))}.main-nav{gap:18px}.main-nav a{font-size:19px}}
 @media(max-width:520px){.cancer-grid{gap:12px}.ribbon-guide{padding:20px}.ribbon-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.ribbon-guide h3{font-size:25px}}
 
-/* Center the men's cards while keeping the existing card sizes. */
-#men-clothing .featured-products { display:flex; flex-wrap:wrap; justify-content:center; }
-#men-clothing .featured-products > .product-card { flex:0 0 calc((100% - 42px) / 8); }
-@media(max-width:1100px){#men-clothing .featured-products > .product-card{flex-basis:calc((100% - 18px) / 4)}}
-@media(max-width:700px){#men-clothing .featured-products > .product-card{flex-basis:calc((100% - 8px) / 2)}}
+/* Match featured collection portraits to the cancer collection card width. */
+:root { --featured-card-width:calc((min(1200px, 100vw) - 36px) * .2826086957 - 10px); }
+#men-clothing .featured-products, #women-clothing .featured-products { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; width:100%; max-width:1000px; margin-inline:auto; }
+#men-clothing .featured-products > .product-card, #women-clothing .featured-products > .product-card { flex:0 0 var(--featured-card-width); }
+@media(max-width:1000px){
+  :root { --featured-card-width:calc((min(740px, 100vw) - 20px) / 2); }
+  #men-clothing { padding-inline:0; }
+  #men-clothing .featured-products, #women-clothing .featured-products { max-width:740px; }
+}
+@media(max-width:520px){
+  :root { --featured-card-width:calc((100vw - 12px) / 2); }
+  #men-clothing .featured-products, #women-clothing .featured-products { gap:12px; }
+}
