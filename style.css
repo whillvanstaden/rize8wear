@@ -1288,8 +1288,9 @@ button {
 
 /* Match featured collection portraits to the cancer collection card width. */
 :root { --featured-card-width:calc((min(1200px, 100vw) - 36px) * .2826086957 - 10px); }
-#men-clothing .featured-products, #women-clothing .featured-products { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; width:100%; max-width:1000px; margin-inline:auto; }
+#men-clothing .featured-products, #women-clothing .featured-products { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; width:100%; max-width:calc(var(--featured-card-width) * 2 + 20px); margin-inline:auto; }
 #men-clothing .featured-products > .product-card, #women-clothing .featured-products > .product-card { flex:0 0 var(--featured-card-width); }
+@media(min-width:1550px){#men-clothing .featured-products, #women-clothing .featured-products{max-width:calc(var(--featured-card-width) * 4 + 60px)}}
 @media(max-width:1000px){
   :root { --featured-card-width:calc((min(740px, 100vw) - 20px) / 2); }
   #men-clothing { padding-inline:0; }
