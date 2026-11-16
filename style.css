@@ -1376,3 +1376,16 @@ button {
 .hero .outline-btn {margin-top:8px;}
 @media(max-width:800px){.hero-content{padding:6px 3%;}.hero-charity-sticker{width:84px;height:84px;font-size:8.4px;border-width:3px;}.hero-charity-sticker span{font-size:7px;}}
 @media(max-width:520px){.hero-content{padding:6px 3%;}.hero h2{margin-top:6px;}.hero .outline-btn{height:32px;margin-top:8px;}}
+
+/* Collection-specific offers and measurement guides. */
+.collection-deal {margin:22px auto 0;max-width:1100px;color:#ed171f;font:900 clamp(20px,2.1vw,30px)/1.5 "Montserrat",sans-serif;text-wrap:balance;}
+.collection-deal strong {font-weight:900;}.collection-deal del {text-decoration-thickness:3px;}
+.bulk-price-note {display:block;margin-top:6px;color:#bc111a;font:700 12px/1.5 "Montserrat",sans-serif;}
+.size-chart-button {display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;margin-top:18px;border:1px solid #222;border-radius:3px;background:#fff;color:#111;font:700 13px "Montserrat",sans-serif;cursor:pointer;}
+.size-chart-button:hover {background:#111;color:#fff;}.size-chart-button:focus-visible {outline:3px solid #e8a900;outline-offset:3px;}
+.collection-size-chart {position:fixed;inset:0;margin:auto;width:min(94vw,1000px);max-height:90vh;padding:0;border:0;border-radius:6px;background:#f2f2f0;color:#1b1c1e;overflow:auto;}
+.collection-size-chart::backdrop {background:rgba(0,0,0,.8);}
+.collection-size-chart .size-chart-section {padding:50px 30px 30px;}
+.collection-size-chart .section-title h2 {color:#1b1c1e;}
+.chart-close {position:absolute;top:8px;right:14px;width:36px;height:36px;border:0;background:transparent;color:#111;font:32px/1 Arial;cursor:pointer;}
+@media(max-width:700px){.collection-size-chart .size-chart-section{padding:52px 20px 24px;}.collection-size-chart .size-chart-content{gap:20px;}}

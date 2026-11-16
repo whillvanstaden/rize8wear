@@ -107,3 +107,14 @@ document.addEventListener('DOMContentLoaded', () => {
  });
  if(new URLSearchParams(location.search).has('resume_order')){try{const draft=JSON.parse(sessionStorage.getItem('rize8-payment-draft')||'null');const card=Array.from(document.querySelectorAll('[data-product-id]')).find(card=>card.dataset.productId===draft?.productId);if(card){card.querySelector('.order-size')?.click();for(const [name,value] of Object.entries(draft.values)){const field=form.elements.namedItem(name);if(field&&!field.disabled){if(field.type==='checkbox')field.checked=value==='on';else field.value=value;}}refresh();}}catch{}}
 });
+
+// Each collection has an independent chart dialog, copied from the original guide.
+document.addEventListener('DOMContentLoaded',()=>{
+ document.querySelectorAll('.collection-size-chart').forEach(chart=>{
+  let previousOverflow='';
+  chart.addEventListener('close',()=>{document.body.style.overflow=previousOverflow;});
+  chart.querySelector('.chart-close').addEventListener('click',()=>chart.close());
+  chart.addEventListener('click',event=>{if(event.target===chart)chart.close();});
+  document.querySelectorAll('[data-size-chart="'+chart.id+'"]').forEach(trigger=>trigger.addEventListener('click',event=>{event.preventDefault();previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';chart.showModal();}));
+ });
+});

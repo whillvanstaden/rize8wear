@@ -29,7 +29,7 @@ export function validateOrder(input){
     customer[field]=value;
   }
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)||customer.phone.replace(/\D/g,'').length<7||!/^\d{4}$/.test(customer.postalCode)||!PROVINCES.includes(customer.province)||input.addressConfirmed!==true)throw Error('Check your email, contact number, province and postal code, and confirm your address.');
-  const unitCents=product.christmas?(quantity>=3?18000:19900):28000;
+  const unitCents=product.christmas?(quantity>=3?18000:19900):25000;
   return {productId:input.productId,name:product.name,audience:product.audience,size:input.size,colour:input.colour,ribbon:product.cancer?input.ribbon:null,quantity,unitCents,deliveryCents:9000,totalCents:unitCents*quantity+9000,customer};
 }
 
