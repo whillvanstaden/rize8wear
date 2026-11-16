@@ -1307,3 +1307,9 @@ button {
   :root { --featured-card-width:calc((100vw - 12px) / 2); }
   #men-clothing .featured-products, #women-clothing .featured-products { gap:12px; }
 }
+
+/* Christmas Black November offer */
+.christmas-section .section-title .christmas-deal { margin:22px auto 0; max-width:1100px; color:#ed171f; font-family:"Montserrat",sans-serif; font-size:clamp(20px,2.1vw,30px); font-weight:900; line-height:1.5; text-wrap:balance; }
+.christmas-deal strong {font-weight:900;}
+.christmas-deal del {text-decoration-thickness:3px;}
+.christmas-section .christmas-price, .christmas-section .christmas-price span {color:#d41019;font-weight:800;}
