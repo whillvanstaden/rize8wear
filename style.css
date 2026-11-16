@@ -1329,3 +1329,30 @@ button {
 .christmas-family-grid {grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;}
 .christmas-family-grid .christmas-family-card {grid-column:auto;}
 @media(max-width:700px){.christmas-family-grid{grid-template-columns:1fr;gap:16px;}}
+
+/* Compact hero: approximately half the previous portrait-driven height. */
+.hero {height:clamp(310px,35vw,620px);min-height:0;}
+.hero-content {flex:none;width:60%;height:100%;padding:100px 5% 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.hero-model {position:absolute;inset:0 0 0 60%;width:40%;height:100%;opacity:1;background:#adaaa5;}
+.hero-model img {width:100%;height:100%;object-fit:contain;object-position:center;}
+.hero-charity-sticker {top:12px;width:84px;height:84px;border-width:3px;font-size:8px;}
+.hero-charity-sticker span {margin-top:3px;font-size:6.5px;}
+.hero h1 {font-size:clamp(40px,5vw,90px);letter-spacing:1.5px;}
+.hero h2 {font-size:clamp(20px,2vw,35px);letter-spacing:1px;margin-top:10px;}
+.hero .outline-btn {min-width:150px;height:44px;flex-shrink:0;padding:0 18px;margin-top:14px;font-size:13px;}
+@media(max-width:800px){
+ .hero {height:300px;min-height:0;}
+ .hero-content {width:60%;padding:82px 4% 12px;}
+ .hero-charity-sticker {width:66px;height:66px;top:10px;border-width:2px;font-size:7px;}
+ .hero-charity-sticker span {font-size:5.5px;margin-top:2px;}
+ .hero h1 {font-size:38px;}
+ .hero h2 {font-size:20px;}
+ .hero-model {inset:0 0 0 60%;width:40%;opacity:1;}
+}
+@media(max-width:520px){
+ .hero {height:270px;min-height:0;}
+ .hero-content {padding:76px 3% 10px;}
+ .hero h1 {font-size:clamp(26px,7.5vw,38px);letter-spacing:.7px;}
+ .hero h2 {font-size:16px;margin-top:8px;}
+ .hero .outline-btn {min-width:125px;padding:0 12px;margin-top:10px;font-size:12px;}
+}
