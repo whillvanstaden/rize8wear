@@ -32,6 +32,17 @@ export const catalogue = {
       "White"
     ]
   },
+  "christmas-geseende-kersfees-le-roux-familie": {
+    "name": "GESEËNDE KERSFEES — LE ROUX FAMILIE",
+    "audience": "Christmas",
+    "cancer": false,
+    "christmas": true,
+    "colours": [
+      "Red",
+      "Black",
+      "White"
+    ]
+  },
   "christmas-smith-family-matching-christmas-t-shirts": {
     "name": "SMITH FAMILY — MATCHING CHRISTMAS T-SHIRTS",
     "audience": "Christmas",
