@@ -1330,29 +1330,30 @@ button {
 .christmas-family-grid .christmas-family-card {grid-column:auto;}
 @media(max-width:700px){.christmas-family-grid{grid-template-columns:1fr;gap:16px;}}
 
-/* Compact hero: approximately half the previous portrait-driven height. */
-.hero {height:clamp(310px,35vw,620px);min-height:0;}
-.hero-content {flex:none;width:60%;height:100%;padding:100px 5% 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.hero-model {position:absolute;inset:0 0 0 60%;width:40%;height:100%;opacity:1;background:#adaaa5;}
-.hero-model img {width:100%;height:100%;object-fit:contain;object-position:center;}
-.hero-charity-sticker {top:12px;width:84px;height:84px;border-width:3px;font-size:8px;}
-.hero-charity-sticker span {margin-top:3px;font-size:6.5px;}
-.hero h1 {font-size:clamp(40px,5vw,90px);letter-spacing:1.5px;}
-.hero h2 {font-size:clamp(20px,2vw,35px);letter-spacing:1px;margin-top:10px;}
-.hero .outline-btn {min-width:150px;height:44px;flex-shrink:0;padding:0 18px;margin-top:14px;font-size:13px;}
+/* Shallow hero banner matching the supplied reference. */
+.hero {height:clamp(220px,23.5vw,360px);min-height:0;}
+.hero-content {flex:none;width:54%;height:100%;padding:96px 3% 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.hero-model {position:absolute;inset:0 0 0 54%;width:46%;height:100%;opacity:1;background:#adaaa5;}
+.hero-model img {width:100%;height:100%;object-fit:cover;object-position:center top;}
+.hero-charity-sticker {top:10px;left:27%;width:clamp(64px,6.5vw,84px);height:clamp(64px,6.5vw,84px);border-width:2px;font-size:clamp(6px,.65vw,8px);}
+.hero-charity-sticker span {margin-top:2px;font-size:clamp(5px,.52vw,6.5px);}
+.hero h1 {font-size:clamp(28px,4.2vw,68px);line-height:1.05;letter-spacing:.6px;white-space:nowrap;}
+.hero h2 {font-size:clamp(16px,2vw,28px);letter-spacing:1px;margin-top:10px;}
+.hero .outline-btn {min-width:140px;height:38px;flex-shrink:0;padding:0 16px;margin-top:12px;font-size:12px;}
 @media(max-width:800px){
- .hero {height:300px;min-height:0;}
- .hero-content {width:60%;padding:82px 4% 12px;}
- .hero-charity-sticker {width:66px;height:66px;top:10px;border-width:2px;font-size:7px;}
- .hero-charity-sticker span {font-size:5.5px;margin-top:2px;}
- .hero h1 {font-size:38px;}
- .hero h2 {font-size:20px;}
- .hero-model {inset:0 0 0 60%;width:40%;opacity:1;}
+ .hero {height:220px;min-height:0;}
+ .hero-content {padding:76px 3% 10px;}
+ .hero-charity-sticker {width:60px;height:60px;top:8px;font-size:6px;}
+ .hero-charity-sticker span {font-size:5px;}
+ .hero h1 {font-size:3.8vw;}
+ .hero h2 {font-size:16px;letter-spacing:.4px;}
+ .hero-model {inset:0 0 0 54%;width:46%;opacity:1;}
+ .hero-model img {object-fit:contain;object-position:center;}
 }
 @media(max-width:520px){
- .hero {height:270px;min-height:0;}
- .hero-content {padding:76px 3% 10px;}
- .hero h1 {font-size:clamp(26px,7.5vw,38px);letter-spacing:.7px;}
- .hero h2 {font-size:16px;margin-top:8px;}
- .hero .outline-btn {min-width:125px;padding:0 12px;margin-top:10px;font-size:12px;}
+ .hero {height:220px;min-height:0;}
+ .hero-content {padding:74px 3% 8px;}
+ .hero h1 {font-size:clamp(20px,5.5vw,28px);white-space:normal;line-height:1.1;}
+ .hero h2 {font-size:14px;line-height:1.2;margin-top:8px;}
+ .hero .outline-btn {min-width:118px;height:36px;padding:0 10px;margin-top:10px;font-size:11px;}
 }
