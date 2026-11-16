@@ -1319,3 +1319,9 @@ button {
 .delivery-details .order-help {margin:0 0 4px;}
 .delivery-details .address-confirmation {display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
 .delivery-details input[type="checkbox"] {width:20px;min-width:20px;height:20px;min-height:20px;margin:0;padding:0;accent-color:#111;}
+
+.size-order-form[hidden],.order-review[hidden] {display:none;}
+.review-details {white-space:pre-line;font:14px/1.7 "Montserrat",sans-serif;overflow-wrap:anywhere;}
+.order-review h3 {font:800 20px "Montserrat",sans-serif;margin:12px 0;}
+.order-review button {width:100%;min-height:46px;margin-top:10px;}
+.order-edit {border:1px solid #111;border-radius:3px;background:#fff;color:#111;font:700 14px "Montserrat",sans-serif;cursor:pointer;}
