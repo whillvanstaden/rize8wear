@@ -1389,3 +1389,27 @@ button {
 .collection-size-chart .section-title h2 {color:#1b1c1e;}
 .chart-close {position:absolute;top:8px;right:14px;width:36px;height:36px;border:0;background:transparent;color:#111;font:32px/1 Arial;cursor:pointer;}
 @media(max-width:700px){.collection-size-chart .size-chart-section{padding:52px 20px 24px;}.collection-size-chart .size-chart-content{gap:20px;}}
+
+/* Full-bleed photo with text reserved for the empty studio background. */
+.hero {height:auto;min-height:0;aspect-ratio:3/1;align-items:stretch;background:#a19b97;}
+.hero::after {display:none;}
+.hero-model {display:block;position:absolute;inset:0;width:100%;height:100%;opacity:1;background:transparent;z-index:0;}
+.hero-model img {display:block;width:100%;height:100%;object-fit:cover;object-position:center;}
+.hero-overlay {z-index:1;background:linear-gradient(90deg,rgba(0,0,0,.68),rgba(0,0,0,.46) 25%,transparent 39%);}
+.hero-content {position:relative;z-index:3;width:33%;height:auto;align-self:stretch;padding:16px 2%;align-items:center;justify-content:center;text-align:center;text-shadow:0 2px 5px rgba(0,0,0,.35);}
+.hero h1 {font-size:clamp(26px,3.2vw,58px);line-height:1.08;white-space:normal;letter-spacing:.4px;}
+.hero h2 {font-size:clamp(16px,1.7vw,26px);line-height:1.2;margin-top:8px;}
+.hero .outline-btn {height:38px;margin-top:10px;background:rgba(0,0,0,.35);}
+.hero-charity-sticker {text-shadow:none;}
+@media(max-width:800px){
+ .hero {height:auto;min-height:0;aspect-ratio:1/1;}
+ .hero-model {inset:0;width:100%;height:100%;}
+ .hero-model img {object-fit:cover;object-position:center;}
+ .hero-overlay {background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.24) 35%,transparent 50%);}
+ .hero-content {position:static;width:70%;height:50%;align-self:flex-start;padding:18px 4%;align-items:flex-start;justify-content:center;text-align:left;}
+ .hero h1 {font-size:clamp(24px,6.4vw,38px);line-height:1.08;white-space:normal;}
+ .hero h2 {font-size:clamp(15px,3.7vw,20px);margin-top:6px;}
+ .hero .outline-btn {height:38px;margin-top:8px;}
+ .hero-charity-sticker {position:absolute;top:18px;right:14px;left:auto;width:84px;height:84px;margin:0;font-size:8.4px;}
+ .hero-charity-sticker span {font-size:7px;}
+}
