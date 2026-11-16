@@ -15,7 +15,7 @@ for(const match of html.matchAll(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi)){
    card.name=decode(html.slice(titleStart,match.index).replace(/<[^>]*>/g,'').trim());
    const id=(card.audience+' '+card.name).normalize('NFKD').replace(/[^\x00-\x7F]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
    const {name,audience,cancer,christmas}=card;
-   catalogue[id]={name,audience,cancer,christmas,colours:cancer?['White','Black']:christmas?['Red','Black','White']:['Red','Black','White','Green']};
+   catalogue[id]={name,audience,cancer,christmas,colours:cancer?['White','Black']:christmas?['Red','Black','White']:['White','Black']};
    edits.push({...card,replacement:card.tag.replace(/\sdata-product-id="[^"]*"/g,'').slice(0,-1)+' data-product-id="'+id+'">'});card=null;titleStart=undefined;
   }
   const idx=stack.findLastIndex(a=>a.tag===tag);if(idx>=0)stack.splice(idx);

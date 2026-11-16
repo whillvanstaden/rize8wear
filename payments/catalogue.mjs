@@ -80,10 +80,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-jesus-freak": {
@@ -92,10 +90,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-beloved-chosen-still-learning": {
@@ -104,10 +100,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-rize-8-wear": {
@@ -116,10 +110,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-outshine-the-darkness": {
@@ -128,10 +120,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-proudly-christian": {
@@ -140,10 +130,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-christian-chick": {
@@ -152,10 +140,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-the-joy-of-the-lord-is-my-strength": {
@@ -164,10 +150,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-make-space-for-joy": {
@@ -176,10 +160,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-cross": {
@@ -188,10 +170,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-gospel-gangsta": {
@@ -200,10 +180,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-the-joy-of-the-lord-is-my-strength": {
@@ -212,10 +190,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-jesus": {
@@ -224,10 +200,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-anti-bullying": {
@@ -236,10 +210,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "men-s-good-vibes-only": {
@@ -248,10 +220,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-make-space-for-joy": {
@@ -260,10 +230,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-positive-mindset": {
@@ -272,10 +240,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-good-vibes-only": {
@@ -284,10 +250,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-trust-god": {
@@ -296,10 +260,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-beloved-chosen-still-learning": {
@@ -308,10 +270,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   },
   "women-s-love-wins": {
@@ -320,10 +280,8 @@ export const catalogue = {
     "cancer": false,
     "christmas": false,
     "colours": [
-      "Red",
-      "Black",
       "White",
-      "Green"
+      "Black"
     ]
   }
 };
