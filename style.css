@@ -1413,3 +1413,7 @@ button {
  .hero-charity-sticker {position:absolute;top:18px;right:14px;left:auto;width:84px;height:84px;margin:0;font-size:8.4px;}
  .hero-charity-sticker span {font-size:7px;}
 }
+
+/* Preserve the complete raised-hands group photo at every screen size. */
+.about-image {min-height:0;display:flex;align-items:center;background:#a69e98;}
+.about-image img {display:block;width:100%;height:auto;object-fit:contain;filter:none;}
