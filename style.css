@@ -1325,3 +1325,7 @@ button {
 .order-review h3 {font:800 20px "Montserrat",sans-serif;margin:12px 0;}
 .order-review button {width:100%;min-height:46px;margin-top:10px;}
 .order-edit {border:1px solid #111;border-radius:3px;background:#fff;color:#111;font:700 14px "Montserrat",sans-serif;cursor:pointer;}
+
+.christmas-family-grid {grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;}
+.christmas-family-grid .christmas-family-card {grid-column:auto;}
+@media(max-width:700px){.christmas-family-grid{grid-template-columns:1fr;gap:16px;}}
