@@ -1313,3 +1313,9 @@ button {
 .christmas-deal strong {font-weight:900;}
 .christmas-deal del {text-decoration-thickness:3px;}
 .christmas-section .christmas-price, .christmas-section .christmas-price span {color:#d41019;font-weight:800;}
+
+.delivery-details {display:grid;gap:10px;min-width:0;margin:14px 0 0;padding:16px 0 0;border:0;border-top:1px solid #ccc;}
+.delivery-details legend {padding:0 6px 0 0;font:700 16px/1.4 "Montserrat",sans-serif;}
+.delivery-details .order-help {margin:0 0 4px;}
+.delivery-details .address-confirmation {display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.delivery-details input[type="checkbox"] {width:20px;min-width:20px;height:20px;min-height:20px;margin:0;padding:0;accent-color:#111;}
