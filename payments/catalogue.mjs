@@ -21,8 +21,8 @@ export const catalogue = {
       "White"
     ]
   },
-  "christmas-girl-jesus-is-the-reason": {
-    "name": "GIRL — JESUS IS THE REASON",
+  "christmas-kids-jesus-is-the-reason": {
+    "name": "KIDS — JESUS IS THE REASON",
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,

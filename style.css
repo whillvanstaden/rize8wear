@@ -1419,3 +1419,7 @@ button {
 .about-image img {display:block;width:100%;height:auto;object-fit:contain;filter:none;}
 
 .christmas-nativity .product-image img {transform:scale(1.12);}
+
+/* Large white collection headings with a contrasting backdrop. */
+.clothing-section > .section-title h2 {display:inline-block;max-width:100%;padding:12px 22px;background:#111;color:#fff;font-size:clamp(34px,4.2vw,62px);line-height:1.12;font-weight:800;letter-spacing:.5px;border-radius:3px;overflow-wrap:normal;}
+@media(max-width:520px){.clothing-section > .section-title h2{padding:10px 14px;font-size:clamp(30px,8.5vw,42px);}}
