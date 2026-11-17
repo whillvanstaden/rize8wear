@@ -1463,3 +1463,14 @@ button {
  .hero-mobile-support {width:100%;padding-left:1%;margin-top:1.4vw;font:700 2.38vw/1.06 Arial,sans-serif;text-align:left;}
  .hero .outline-btn {margin-top:.7vw;}
 }
+
+/* Desktop reference: prominent left copy with the models kept unobstructed. */
+@media(min-width:801px){
+ .hero-content {width:42%;padding:2.2vw 1.1vw 0;align-items:flex-start;justify-content:flex-start;text-align:left;}
+ .hero h1 {font-family:"Anton",sans-serif;font-size:4.6vw;line-height:1.05;letter-spacing:-.1px;white-space:nowrap;text-shadow:2px 3px 4px rgba(0,0,0,.5);}
+ .hero h2 {font-family:"Bebas Neue",sans-serif;font-size:5.7vw;line-height:1;letter-spacing:1px;margin-top:1.6vw;text-align:left;text-shadow:2px 3px 4px rgba(0,0,0,.5);}
+ .hero h2 span {display:block;}
+ .hero-support-row {display:none;}
+ .hero-mobile-support {display:block;width:100%;margin:2.3vw 0 0;color:#fff;font:700 .86vw/1.1 Arial,sans-serif;white-space:nowrap;text-align:left;text-shadow:none;}
+ .hero .outline-btn {width:15.2vw;min-width:0;height:4.2vw;margin:1.8vw 0 0 8.7vw;padding:0;font-size:1vw;letter-spacing:0;border:1px solid #deded8;background:rgba(25,25,25,.65);}
+}
