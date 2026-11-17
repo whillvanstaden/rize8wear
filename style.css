@@ -1453,3 +1453,13 @@ button {
  .hero-mobile-support {display:block;max-width:100%;margin:3.6vw 0 0;color:#fff;font:400 2.25vw/1.2 "Anton",sans-serif;white-space:nowrap;text-align:center;text-shadow:none;}
  .hero .outline-btn {width:35%;min-width:0;height:9.4vw;min-height:0;margin-top:2vw;padding:0 8px;font-size:2.4vw;letter-spacing:.5px;border:1px solid #deded8;background:rgba(25,25,25,.65);}
 }
+
+/* Match the customer's tighter mobile composition and two-line tagline. */
+@media(max-width:800px){
+ .hero-content {padding:4.3% 1.5% 0;}
+ .hero h1 {font-size:11.3vw;line-height:1;letter-spacing:-.1px;}
+ .hero h2 {align-self:flex-start;margin-top:1vw;padding-left:1%;font-size:8.4vw;line-height:1.02;text-align:left;}
+ .hero h2 span {display:block;}
+ .hero-mobile-support {width:100%;padding-left:1%;margin-top:1.4vw;font:700 2.1vw/1.2 Arial,sans-serif;text-align:left;}
+ .hero .outline-btn {margin-top:.7vw;}
+}
