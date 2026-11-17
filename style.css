@@ -1460,6 +1460,6 @@ button {
  .hero h1 {font-size:11.3vw;line-height:1;letter-spacing:-.1px;}
  .hero h2 {align-self:flex-start;margin-top:1vw;padding-left:1%;font-size:8.4vw;line-height:1.02;text-align:left;}
  .hero h2 span {display:block;}
- .hero-mobile-support {width:100%;padding-left:1%;margin-top:1.4vw;font:700 2.1vw/1.2 Arial,sans-serif;text-align:left;}
+ .hero-mobile-support {width:100%;padding-left:1%;margin-top:1.4vw;font:700 2.38vw/1.06 Arial,sans-serif;text-align:left;}
  .hero .outline-btn {margin-top:.7vw;}
 }
