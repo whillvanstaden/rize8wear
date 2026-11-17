@@ -55,7 +55,7 @@ export const catalogue = {
     ]
   },
   "christmas-smith-family-white-christmas-t-shirts": {
-    "name": "SMITH FAMILY — WHITE CHRISTMAS T-SHIRTS",
+    "name": "CELE FAMILY — WHITE CHRISTMAS T-SHIRTS",
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,
