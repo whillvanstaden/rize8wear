@@ -1478,5 +1478,5 @@ button {
 .drug-awareness-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;max-width:1500px;margin:35px auto 0}.drug-awareness-grid .product-image{aspect-ratio:3/4;overflow:hidden}.drug-awareness-grid .product-image img{width:100%;height:100%;object-fit:cover;object-position:center 28%}@media(max-width:800px){.drug-awareness-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}}
 
 /* Align awareness portraits by their faces and shirt artwork. */
-.drug-awareness-grid .product-card:nth-child(3) .product-image img{transform:scale(1.16) translateY(-10%);transform-origin:center center;}
+.drug-awareness-grid .product-card:nth-child(3) .product-image img{transform:scale(1.16) translateY(-5%);transform-origin:center center;}
 .drug-awareness-grid .product-card:nth-child(4) .product-image img{transform:scale(.96) translateY(3%);transform-origin:center top;}
