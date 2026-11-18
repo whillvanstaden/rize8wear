@@ -294,5 +294,45 @@ export const catalogue = {
       "White",
       "Black"
     ]
+  },
+  "drug-recovery-is-possible": {
+    "name": "RECOVERY IS POSSIBLE",
+    "audience": "Drug Abuse Awareness",
+    "cancer": false,
+    "christmas": false,
+    "colours": [
+      "White",
+      "Black"
+    ]
+  },
+  "drug-say-no-be-happy": {
+    "name": "SAY NO. BE HAPPY. REPEAT.",
+    "audience": "Drug Abuse Awareness",
+    "cancer": false,
+    "christmas": false,
+    "colours": [
+      "White",
+      "Black"
+    ]
+  },
+  "drug-your-life-matters": {
+    "name": "YOUR LIFE MATTERS",
+    "audience": "Drug Abuse Awareness",
+    "cancer": false,
+    "christmas": false,
+    "colours": [
+      "White",
+      "Black"
+    ]
+  },
+  "drug-just-say-no": {
+    "name": "JUST SAY NO",
+    "audience": "Drug Abuse Awareness",
+    "cancer": false,
+    "christmas": false,
+    "colours": [
+      "White",
+      "Black"
+    ]
   }
 };
