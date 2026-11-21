@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
  const review=dialog.querySelector('.order-review');
  const editOrder=()=>{dialog.querySelector('.review-status').textContent='';dialog.querySelector('.order-confirm').disabled=false;reviewing=false;review.hidden=true;form.hidden=false;dialog.querySelector('#sizeOrderTitle').textContent=product?.cancer?'Choose your cancer T-shirt':'Order my size';};
  dialog.querySelector('.order-edit').addEventListener('click',editOrder);
- dialog.querySelector('.order-confirm').addEventListener('click',()=>form.requestSubmit());
+ dialog.querySelector('.order-confirm').addEventListener('click',()=>{form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});
  const unitPrice=()=>product.bulkPrice&&Number(quantity.value)>=(product.bulkMinimum||2)?product.bulkPrice:product.price;
  const refresh=()=>{const valid=!!size.value&&!!color.value&&(!product?.cancer||!!ribbon.value)&&quantity.validity.valid,unit=product?unitPrice():0;submit.hidden=false;total.textContent=valid?'Subtotal: R'+(unit*Number(quantity.value))+' (R'+unit+' each) + R99 delivery. Total: R'+(unit*Number(quantity.value)+99):'';status.textContent='';};
  form.addEventListener('input',refresh);form.addEventListener('change',refresh);
