@@ -77,6 +77,15 @@ test('server rejects missing method or confirmation and recalculates door delive
  assert.equal(validateOrder({...input(),delivery:{methodId:'tcg-door',feeCents:0},deliveryCents:0}).deliveryCents,9900);
 });
 
+test('PayFast and saved delivery charge use the server-priced free-shipping threshold',async()=>{
+ for(const [quantity,fee,total] of [[4,9900,109900],[5,0,125000]]){
+  const env=environment(),body={...input(),productId:'men-s-outshine-the-darkness',quantity,subtotalCents:100001,deliveryCents:0,delivery:{methodId:'tcg-door',feeCents:0}};
+  const order=validateOrder(body);assert.equal(order.deliveryCents,fee);assert.equal(order.delivery.feeCents,fee);assert.equal(order.totalCents,total);
+  const response=await checkout(env,body);assert.equal(response.status,200);assert.equal((await response.json()).fields.amount,(total/100).toFixed(2));
+  const record=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);assert.equal(record.deliveryCents,fee);assert.equal(record.delivery.feeCents,fee);
+ }
+});
+
 test('server rejects Midrand collection during its holiday closure',()=>{
  const body={...input(),delivery:{methodId:'collect-midrand'}};
  assert.equal(validateOrder(body,{now:new Date('2026-12-15T09:59:59Z')}).deliveryCents,0);

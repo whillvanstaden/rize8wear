@@ -34,6 +34,7 @@ export function validateOrder(input,{requireConfirmation=true,forPayment=true,no
   const products=new Map(Object.entries(catalogue));
   const lines=items.map((line,index)=>globalThis.Rize8Cart.normaliseLine({...line,id:'line-'+index},products));
   const order=globalThis.Rize8Cart.calculate(lines,products,method.id,now),first=order.lines[0];
+  delivery.feeCents=order.deliveryCents;
   const reference=/^R8-[0-9]{6}-[A-F0-9]{16}$/.test(input.reference||'')?input.reference:null;
   return {...order,reference,delivery,customer,shippingTermsAccepted:input.shippingTermsAccepted===true,shippingTermsVersion:input.shippingTermsAccepted===true?'2026-11-23':null,productId:first.productId,name:order.lines.length===1?first.product.name:order.quantity+' T-shirts',audience:first.product.audience,size:first.size,colour:first.colour,ribbon:first.ribbon,unitCents:first.unitCents};
 }

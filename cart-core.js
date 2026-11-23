@@ -41,8 +41,8 @@
    return {...line,product,discounted,unitCents,lineCents:unitCents*line.quantity};
   });
   const method=lines.length&&deliveryMethodId?shipping.getMethod(deliveryMethodId,now):null;
-  const subtotalCents=lines.reduce((sum,line)=>sum+line.lineCents,0),deliveryCents=method?method.feeCents:0;
-  return {lines,quantity:lines.reduce((sum,line)=>sum+line.quantity,0),subtotalCents,deliveryCents,totalCents:method?.quoteOnly?null:subtotalCents+deliveryCents,deliverySelected:!!method,paymentReady:!!method&&!method.quoteOnly,delivery:method?{methodId:method.id,label:method.label,kind:method.kind,courier:method.courier,feeCents:method.feeCents,quoteOnly:!!method.quoteOnly}:null};
+  const subtotalCents=lines.reduce((sum,line)=>sum+line.lineCents,0),deliveryCents=method?shipping.feeForSubtotal(method,subtotalCents):0;
+  return {lines,quantity:lines.reduce((sum,line)=>sum+line.quantity,0),subtotalCents,deliveryCents,totalCents:method?.quoteOnly?null:subtotalCents+deliveryCents,deliverySelected:!!method,paymentReady:!!method&&!method.quoteOnly,delivery:method?{methodId:method.id,label:method.label,kind:method.kind,courier:method.courier,feeCents:deliveryCents,quoteOnly:!!method.quoteOnly}:null};
  }
  function restore(saved,catalogue){
   if(!saved||saved.version!==1||!Array.isArray(saved.items)||saved.items.length>50||!Number.isFinite(saved.savedAt)||Date.now()-saved.savedAt>7*86400000)return [];

@@ -23,6 +23,21 @@ test('checkout offers only the two free collections and R99 door delivery; retir
 test('multiple shirts incur one fixed door delivery fee and switching to free removes it',()=>{
  const door=cart.calculate(items(2),products,'tcg-door'),free=cart.calculate(items(2),products,'collect-midrand',openCollectionDate);assert.equal(door.totalCents,59900);assert.equal(door.deliveryCents,9900);assert.equal(free.totalCents,50000);
 });
+
+test('free shipping applies strictly over R1000 and recalculates after edits',()=>{
+ const method=shipping.getMethod('tcg-door');
+ for(const [subtotal,fee] of [[99999,9900],[100000,9900],[100001,0]])assert.equal(shipping.feeForSubtotal(method,subtotal),fee);
+ for(const [quantity,deliveryCents,totalCents] of [[4,9900,109900],[5,0,125000],[4,9900,109900],[1,9900,34900]]){
+  const order=cart.calculate(items(quantity),products,'tcg-door');assert.equal(order.deliveryCents,deliveryCents);assert.equal(order.delivery.feeCents,deliveryCents);assert.equal(order.totalCents,totalCents);
+ }
+});
+
+test('free shipping uses the discounted Christmas subtotal',()=>{
+ const christmas=new Map([['shirt',{...products.get('shirt'),price:199,bulkPrice:180,bulkMinimum:3,bulkGroup:'christmas'}]]);
+ for(const [quantity,subtotal,fee] of [[5,90000,9900],[6,108000,0]]){
+  const order=cart.calculate(items(quantity),christmas,'tcg-door');assert.equal(order.subtotalCents,subtotal);assert.equal(order.deliveryCents,fee);
+ }
+});
 test('missing, incomplete and postal-box addresses are rejected; no courier verification is claimed',()=>{
  for(const changes of [{street:''},{street:'PO Box 123'},{city:''},{province:'Invalid'},{postalCode:'123'}])assert.throws(()=>shipping.validateDelivery({methodId:'tcg-door'},{...address,...changes},{confirmed:true}));
  assert.equal(shipping.validateDelivery({methodId:'tcg-door'},address,{confirmed:true}).addressVerified,false);

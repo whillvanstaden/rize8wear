@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  <label for="customerPhone">Contact number *</label><input id="customerPhone" name="customerPhone" type="tel" autocomplete="tel" required minlength="7" maxlength="25" pattern="[+0-9() .-]{7,25}" title="Enter your contact number, including area or country code.">
  <fieldset class="delivery-methods"><legend>Choose Your Delivery Method</legend><div class="delivery-options"></div></fieldset>
  <section class="checkout-delivery-terms" aria-labelledby="deliveryTermsHeading"><h3 id="deliveryTermsHeading">Before you order: delivery terms</h3>
- <ul><li><strong>Door-to-door delivery is R99 per order.</strong> Collection at Kritzinger Road or Midrand is free; please check the addresses, hours and Midrand holiday closure above.</li>
+ <ul><li><strong>FREE door-to-door shipping on product orders over R1,000 after discounts.</strong> Orders of R1,000 or less have a flat R99 delivery fee. Collection at Kritzinger Road or Midrand is free; please check the addresses, hours and Midrand holiday closure above.</li>
  <li>Processing begins within <strong>48 hours of cleared payment</strong>. Proof of payment alone does not confirm payment.</li>
  <li>Once processing begins, allow up to <strong>3 working days for preparation and dispatch</strong>. Working days exclude weekends and South African public holidays.</li>
  <li>Delivery timeframes are estimates confirmed for your selected service. Courier delays, remote locations and peak periods may affect arrival.</li>
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(order.storefrontTest){const note=document.createElement('p');note.textContent='R5 payment test only. No merchandise or delivery will be supplied.';box.append(note);}
   return box;
  }
- function drawSummary(target){const order=snapshot();target.replaceChildren();for(const line of order.lines){const p=document.createElement('p');p.className='checkout-line';p.textContent=line.quantity+' × '+line.product.audience+' '+line.product.name+' · '+line.size+' · '+line.colour+(line.ribbon?' · '+line.ribbon+' ribbon':'')+(line.personalisation?' · '+line.personalisation:'')+' — '+core.money(line.lineCents);target.append(p);}target.append(totalsElement(order));}
+ function drawSummary(target){const order=snapshot();syncDeliveryFees(order.subtotalCents);target.replaceChildren();for(const line of order.lines){const p=document.createElement('p');p.className='checkout-line';p.textContent=line.quantity+' × '+line.product.audience+' '+line.product.name+' · '+line.size+' · '+line.colour+(line.ribbon?' · '+line.ribbon+' ribbon':'')+(line.personalisation?' · '+line.personalisation:'')+' — '+core.money(line.lineCents);target.append(p);}target.append(totalsElement(order));}
  const linePriceText=line=>core.money(line.unitCents)+' each'+(line.discounted?' (Christmas 3+ price)':'')+' · '+core.money(line.lineCents);
  function refreshCartTotals(){const order=snapshot();for(const row of dialog.querySelectorAll('.cart-line')){const line=order.lines.find(line=>line.id===row.dataset.lineId);if(line)row.querySelector('.cart-line-price').textContent=linePriceText(line);}dialog.querySelector('.cart-totals').replaceChildren(totalsElement(order));}
  function renderCart(){
@@ -137,6 +137,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   const values=Object.fromEntries(new FormData(itemForm));cart=core.upsertLine(cart,{id:crypto.randomUUID(),productId:design.value,...values},catalogue,editingId);changed();renderCart();show('cart','Your cart');dialog.querySelector('.cart-feedback').textContent=editingId?'Your changes have been saved.':'Added to your cart. Keep shopping to add another design or size.';editingId=null;
  }catch(error){dialog.querySelector('.item-error').textContent=error.message;}});
  function openDelivery(){if(!cart.length)return openCart();drawSummary(dialog.querySelector('.checkout-summary'));show('delivery','Checkout');}
+ function deliveryFeeText(method,subtotalCents){if(!shipping.availability(method.id).available)return 'TEMPORARILY UNAVAILABLE';if(method.quoteOnly)return 'ARRANGE BEFORE CHECKOUT';const fee=shipping.feeForSubtotal(method,subtotalCents);return fee?core.money(fee):method.kind==='collection'?'FREE COLLECTION':'FREE DELIVERY';}
+ function syncDeliveryFees(subtotalCents){for(const card of dialog.querySelectorAll('.delivery-option')){const method=shipping.methods.find(method=>method.id===card.querySelector('input').value);card.querySelector('.delivery-fee').textContent=deliveryFeeText(method,subtotalCents);}}
  function syncDeliveryFields(){
   const method=deliveryMethodId?shipping.getMethod(deliveryMethodId):null,addressFields=dialog.querySelector('.door-address-fields'),areaFields=dialog.querySelector('.quote-area-fields');
   addressFields.hidden=method?.kind!=='address';addressFields.querySelectorAll('input,select').forEach(field=>{field.disabled=addressFields.hidden;field.required=!addressFields.hidden&&field.name!=='deliveryUnit';});
@@ -147,7 +149,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const card=document.createElement('div');card.className='delivery-option';const label=document.createElement('label'),radio=document.createElement('input'),copy=document.createElement('span'),name=document.createElement('strong'),fee=document.createElement('span'),description=document.createElement('small');
   const methodAvailability=shipping.availability(method.id);
   radio.type='radio';radio.name='shippingMethod';radio.value=method.id;radio.required=true;radio.disabled=!methodAvailability.available||method.quoteOnly;radio.checked=deliveryMethodId===method.id;radio.setAttribute('aria-label',method.label);
-  name.textContent=method.label;fee.className='delivery-fee';fee.textContent=!methodAvailability.available?'TEMPORARILY UNAVAILABLE':method.quoteOnly?'ARRANGE BEFORE CHECKOUT':method.feeCents?core.money(method.feeCents):'FREE COLLECTION';description.textContent=(method.quoteOnly?'Contact RIZE8 Wear to arrange this courier first. Online checkout requires a confirmed delivery fee and location.':method.description)+(!methodAvailability.available?' '+methodAvailability.reason:'');
+  name.textContent=method.label;fee.className='delivery-fee';fee.textContent=deliveryFeeText(method,snapshot().subtotalCents);description.textContent=(method.quoteOnly?'Contact RIZE8 Wear to arrange this courier first. Online checkout requires a confirmed delivery fee and location.':method.description)+(!methodAvailability.available?' '+methodAvailability.reason:'');
   copy.append(name,fee,description);label.append(radio,copy);card.append(label);
   if(method.officialUrl){const link=document.createElement('a');link.href=method.officialUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Visit the official '+method.courier+' website';card.append(link);}
   radio.addEventListener('change',()=>{deliveryMethodId=method.id;deliveryForm.elements.shippingTermsAccepted.checked=false;changed();syncDeliveryFields();drawSummary(dialog.querySelector('.checkout-summary'));});dialog.querySelector('.delivery-options').append(card);

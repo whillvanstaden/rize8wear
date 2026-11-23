@@ -33,7 +33,7 @@ test('editing a design preserves other cart items; editing into an identical var
 });
 test('Christmas quantity discount combines designs and sizes, without discounting regular shirts',()=>{
  const order=calculate([item('a','christmas-a',{size:'S'}),item('b','christmas-b',{size:'L'}),item('c','christmas-c',{size:'XL'}),item('d'),item('e','women-cancer',{ribbon:'Purple'})],products);
- assert.deepEqual(order.lines.map(line=>line.unitCents),[18000,18000,18000,25000,25000]);assert.equal(order.totalCents,113900);
+ assert.deepEqual(order.lines.map(line=>line.unitCents),[18000,18000,18000,25000,25000]);assert.equal(order.deliveryCents,0);assert.equal(order.totalCents,104000);
  const reduced=calculate(order.lines.filter(line=>line.id!=='c'),products);
  assert.deepEqual(reduced.lines.map(line=>line.unitCents),[19900,19900,25000,25000]);assert.equal(reduced.totalCents,99700);
 });
