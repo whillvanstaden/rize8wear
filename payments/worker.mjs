@@ -47,9 +47,24 @@ function config(env){
   return {sandbox,host:sandbox?'sandbox.payfast.co.za':'www.payfast.co.za',merchantId:sandbox?'10004002':env.PAYFAST_MERCHANT_ID,merchantKey:sandbox?'q1cd2rdny4a53':env.PAYFAST_MERCHANT_KEY,passphrase:sandbox?'payfast':env.PAYFAST_PASSPHRASE||''};
 }
 
-function allowedIp(ip){
-  const n=ip.split('.').map(Number);if(n.length!==4||n.some(x=>!Number.isInteger(x)||x<0||x>255))return false;
-  return n[0]===197&&n[1]===97&&n[2]===145&&n[3]>=144&&n[3]<=159||n[0]===41&&n[1]===74&&n[2]===179&&n[3]>=192&&n[3]<=223||n[0]===102&&n[1]===216&&n[2]===36&&(n[3]<=15||n[3]>=128&&n[3]<=143)||ip==='144.126.193.139';
+let payfastIps=null,payfastIpsExpire=0;
+export async function resolvePayfastIps(fetcher=fetch){
+  // PayFast publishes current callback addresses in these official DNS records.
+  // Resolve through HTTPS rather than pinning ranges that can become outdated.
+  const hosts=['www.payfast.co.za','ips.payfast.co.za','w1w.payfast.co.za','w2w.payfast.co.za','sandbox.payfast.co.za'];
+  const answers=await Promise.allSettled(hosts.map(async host=>{
+    const response=await fetcher('https://cloudflare-dns.com/dns-query?name='+host+'&type=A',{headers:{accept:'application/dns-json'},signal:AbortSignal.timeout(5000)});
+    if(!response.ok)throw Error('DNS unavailable');const result=await response.json();if(result.Status!==0)throw Error('DNS unavailable');
+    return (result.Answer||[]).filter(record=>record.type===1).map(record=>record.data);
+  }));
+  const ips=new Set(answers.filter(answer=>answer.status==='fulfilled').flatMap(answer=>answer.value));
+  if(!ips.size||answers.some(answer=>answer.status==='rejected'))throw Error('PayFast source validation temporarily unavailable.');
+  return ips;
+}
+async function allowedIp(ip){
+  const n=ip.split('.').map(Number);if(n.length!==4||n.some(x=>!Number.isInteger(x)||x<0||x>255)||n[0]===127||n[0]===10||n[0]===192&&n[1]===168)return false;
+  if(!payfastIps||Date.now()>payfastIpsExpire){payfastIps=await resolvePayfastIps();payfastIpsExpire=Date.now()+300000;}
+  return payfastIps.has(ip);
 }
 
 async function checkout(request,env){
@@ -80,7 +95,7 @@ async function checkout(request,env){
 async function notify(request,env){
   if(!env.DB)return new Response('Unavailable',{status:503});
   // Trust Cloudflare's connection header, never a caller-supplied Referer.
-  if(!allowedIp(request.headers.get('CF-Connecting-IP')||''))return new Response('Invalid source',{status:403});
+  if(!await allowedIp(request.headers.get('CF-Connecting-IP')||''))return new Response('Invalid source',{status:403});
   const raw=await request.text();if(raw.length>16000)return new Response('Too large',{status:413});
   const params=new URLSearchParams(raw),pairs=Array.from(params);
   if(new Set(pairs.map(([k])=>k)).size!==pairs.length)return new Response('Duplicate fields',{status:400});

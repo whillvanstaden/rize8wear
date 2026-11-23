@@ -4,9 +4,11 @@ import {createHash} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
-import worker,{signature,parameterString,validateOrder} from './worker.mjs';
+import worker,{signature,parameterString,validateOrder,resolvePayfastIps} from './worker.mjs';
 import {md5} from './md5.mjs';
 const origin='https://rize8wear.co.za',base='https://rize8wear-preview.grey-haven-7361.chatgpt.site';
+const networkFetch=globalThis.fetch;
+globalThis.fetch=(url,options)=>String(url).startsWith('https://cloudflare-dns.com/dns-query?')?Promise.resolve(new Response(JSON.stringify({Status:0,Answer:[{type:1,data:'197.97.145.144'},{type:1,data:'3.163.236.237'}]}))):networkFetch(url,options);
 const input=()=>({productId:'christmas-mom-jesus-is-the-reason',size:'M',colour:'Black',quantity:3,delivery:{methodId:'tcg-door'},deliveryConfirmed:true,customer:{name:'Test Customer',email:'test@example.com',phone:'0820000000',street:'123 Example Street',unit:'',suburb:'Test Suburb',city:'Test City',province:'Gauteng',postalCode:'0001'}});
 function environment(){
  const db=new DatabaseSync(':memory:');db.exec(readFileSync(new URL('drizzle/0000_orders.sql',import.meta.url),'utf8'));
@@ -16,6 +18,11 @@ const checkout=(env,body=input())=>worker.fetch(new Request(base+'/api/checkout'
 const notify=(env,pairs,ip='197.97.145.144')=>worker.fetch(new Request(base+'/api/payfast/notify',{method:'POST',headers:{'CF-Connecting-IP':ip},body:new URLSearchParams(pairs).toString()}),env);
 function notification(id,overrides={}){const pairs=Object.entries({m_payment_id:id,pf_payment_id:'123456',payment_status:'COMPLETE',item_name:'RIZE8 test',amount_gross:'639.00',amount_fee:'-5.00',amount_net:'634.00',merchant_id:'10004002',...overrides});pairs.push(['signature',signature(pairs,'payfast',true)]);return pairs;}
 test('MD5 matches Node for padding boundaries and Unicode',()=>{for(const value of ['','abc','a'.repeat(55),'a'.repeat(56),'a'.repeat(64),'a'.repeat(300),'Geseënde Kersfees'])assert.equal(md5(value),createHash('md5').update(value).digest('hex'));});
+test('callback source checks follow official DNS and fail closed when DNS is unavailable',async()=>{
+ const urls=[];const ips=await resolvePayfastIps(async url=>{urls.push(url);return new Response(JSON.stringify({Status:0,Answer:[{type:1,data:'3.163.236.237'},{type:5,data:'alias.example'}]}));});
+ assert(ips.has('3.163.236.237'));assert(!ips.has('alias.example'));assert.equal(urls.length,5);assert(urls.every(url=>/^https:\/\/cloudflare-dns\.com\/dns-query\?name=(www|ips|w1w|w2w|sandbox)\.payfast\.co\.za&type=A$/.test(url)));
+ await assert.rejects(resolvePayfastIps(async()=>new Response('Unavailable',{status:503})),/source validation temporarily unavailable/);
+});
 test('PayFast encoding uses PHP form encoding and documented ordering',()=>{assert.equal(parameterString([['name','Test !~()*'],['empty','']]),'name=Test+%21%7E%28%29%2A');const pairs=[['name','Test User'],['amount','639.00']];assert.equal(signature(pairs,'phrase'),createHash('md5').update('name=Test+User&amount=639.00&passphrase=phrase').digest('hex'));});
 test('server prices ignore client amounts and enforce three-shirt deal',()=>{for(const [qty,expected] of [[1,29800],[2,49700],[3,63900]])assert.equal(validateOrder({...input(),quantity:qty,unitCents:1,totalCents:1}).totalCents,expected);assert.throws(()=>validateOrder({...input(),colour:'Green'}));assert.throws(()=>validateOrder({...input(),quantity:-1}));assert.throws(()=>validateOrder({...input(),productId:'fake'}));assert.throws(()=>validateOrder({...input(),deliveryConfirmed:false}));});
 test('disabled checkout cannot collect an order',async()=>{const env=environment();env.PAYFAST_ENABLED='false';assert.equal((await checkout(env)).status,503);assert.equal(env._db.prepare('SELECT COUNT(*) AS n FROM orders').get().n,0);});
