@@ -100,8 +100,10 @@ async function checkout(request,env,testOnly=false){
   if(!existing&&recent?.count>=15)return json({error:'Too many payment attempts. Please try again later, or order via WhatsApp.'},429);
   const pairs=[['merchant_id',cfg.merchantId],['merchant_key',cfg.merchantKey],['return_url',base+'/payment/return?order='+id+'&token='+secret],['cancel_url',base+'/payment/cancel?order='+id+'&token='+secret+(testOnly?'&checkout_test=1':'')],['notify_url',base+'/api/payfast/notify'],['name_first',order.customer.name.split(' ')[0]],['name_last',order.customer.name.split(' ').slice(1).join(' ')],['email_address',order.customer.email],['cell_number',order.customer.phone],['m_payment_id',id],['amount',money(order.totalCents)],['item_name',('RIZE8 '+order.name).slice(0,100)],['item_description',(order.quantity+' shirts; '+order.delivery.label+'; delivery '+money(order.deliveryCents)).slice(0,255)],['custom_str1',order.customer.name],['custom_str2',(order.delivery.kind==='collection'?order.delivery.label:[order.customer.street,order.customer.unit].filter(Boolean).join(', ')).slice(0,255)],['custom_str3',(order.delivery.kind==='collection'?'Collection arrangements after confirmation':[order.customer.suburb,order.customer.city,order.customer.province,order.customer.postalCode].filter(Boolean).join(', ')).slice(0,255)],['custom_str4',order.customer.phone],['email_confirmation','1'],['confirmation_address','sales@rize8wear.co.za']];
   // Keep the same customer reference in PayFast and WhatsApp.
+  const receiptUrl=base+'/r/'+id+'/'+secret;
+  if(!testOnly)pairs.find(([key])=>key==='item_description')[1]=[(order.reference||id),order.quantity+' shirts',order.delivery.courier+' '+money(order.deliveryCents),'Full order: '+receiptUrl].join(' | ');
   if(testOnly)pairs.find(([key])=>key==='item_description')[1]='R5 live integration test only. No T-shirt, shipping or subscription.';
-  pairs.find(([key])=>key==='custom_str2')[1]=base+'/payment/return?order='+id+'&token='+secret;
+  pairs.find(([key])=>key==='custom_str2')[1]=receiptUrl;
   pairs.splice(pairs.findIndex(([key])=>key==='email_confirmation'),0,['custom_str5',order.reference||id]);
   pairs.push(['signature',signature(pairs,cfg.passphrase)]);
   if(!existing)await env.DB.prepare('INSERT OR IGNORE INTO orders (id, token_hash, status, mode, total_cents, details_json, ip_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(id,await hash(secret),'awaiting_payment',cfg.sandbox?'sandbox':'live',order.totalCents,JSON.stringify(order),ipHash,now).run();
@@ -177,6 +179,8 @@ export default {async fetch(request,env){
       return response;
     }
     if(url.pathname==='/payment/return'||url.pathname==='/payment/cancel')return paymentReturn(request);
+    const receiptPath=url.pathname.match(/^\/r\/(R8-PF-[a-f0-9]{32})\/([a-f0-9]{64})$/);
+    if(receiptPath&&request.method==='GET'){const target=new URL('/payment/return',url);target.searchParams.set('order',receiptPath[1]);target.searchParams.set('token',receiptPath[2]);return paymentReturn(new Request(target));}
     if(url.pathname==='/payment/test'&&request.method==='GET')return paymentTestPage(request,env);
     if(request.method!=='GET'&&request.method!=='HEAD')return new Response('Method not allowed',{status:405});
     // GitHub remains the source and host for all storefront pages and images.

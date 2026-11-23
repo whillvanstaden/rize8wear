@@ -76,7 +76,7 @@ test('payment retries reuse one pending record and reject changed or paid orders
  const env=environment(),body={...input(),reference:'R8-261123-0123456789ABCDEF',attemptToken:'ab'.repeat(32),expectedTotalCents:63900};
  const first=await(await checkout(env,body)).json(),again=await(await checkout(env,body)).json();
  assert.equal(first.orderId,again.orderId);assert.equal(first.token,again.token);assert.equal(env._db.prepare('SELECT COUNT(*) AS n FROM orders').get().n,1);
- assert.equal(first.fields.custom_str5,body.reference);assert.match(first.fields.custom_str2,/\/payment\/return\?order=/);
+ assert.equal(first.fields.custom_str5,body.reference);assert.match(first.fields.custom_str2,/\/r\/R8-PF-/);
  assert.equal((await checkout(env,{...body,quantity:2})).status,409);
  assert.equal((await checkout(env,{...body,attemptToken:'not-a-token'})).status,400);
  env._db.prepare("UPDATE orders SET status='paid'").run();assert.equal((await checkout(env,body)).status,409);
@@ -90,6 +90,14 @@ test('receipt protects full order details with an unguessable token',async()=>{
  const page=await(await worker.fetch(new Request(base+'/payment/cancel?order='+result.orderId+'&token='+result.token),env)).text();assert.match(page,/wa.me\/27603709033/);assert.match(page,/resume_order=1/);assert.match(page,/api\/order-receipt/);
  assert.doesNotThrow(()=>new Script(page.match(/<script>([\s\S]*?)<\/script>/)[1]));
  const success=await(await worker.fetch(new Request(base+'/payment/return?order='+result.orderId+'&token='+result.token),env)).text();assert.doesNotThrow(()=>new Script(success.match(/<script>([\s\S]*?)<\/script>/)[1]));
+});
+
+test('merchant payment email contains courier fee, reference and a complete-order receipt link',async()=>{
+ const env=environment(),body={...input(),reference:'R8-261123-0123456789ABCDEF'};
+ const result=await(await checkout(env,body)).json();assert.equal(result.fields.email_confirmation,'1');assert.equal(result.fields.confirmation_address,'sales@rize8wear.co.za');
+ assert.match(result.fields.item_description,/R8-261123-0123456789ABCDEF/);assert.match(result.fields.item_description,/The Courier Guy 99.00/);assert(result.fields.item_description.includes(result.fields.custom_str2));assert(result.fields.item_description.length<=255);
+ const receipt=await worker.fetch(new Request(result.fields.custom_str2),env);assert.equal(receipt.status,200);assert.equal(receipt.headers.get('referrer-policy'),'no-referrer');assert.equal(receipt.headers.get('x-robots-tag'),'noindex, nofollow');
+ const page=await receipt.text();assert.doesNotThrow(()=>new Script(page.match(/<script>([\s\S]*?)<\/script>/)[1]));
 });
 
 test('live checkout signs the configured merchant credentials and fails closed if missing',async()=>{
