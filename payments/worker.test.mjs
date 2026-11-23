@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
+import {Script} from 'node:vm';
 import worker,{signature,parameterString,validateOrder} from './worker.mjs';
 import {md5} from './md5.mjs';
 const origin='https://rize8wear.co.za',base='https://rize8wear-preview.grey-haven-7361.chatgpt.site';
@@ -80,6 +81,8 @@ test('receipt protects full order details with an unguessable token',async()=>{
  const receipt=await(await worker.fetch(new Request(base+'/api/order-receipt?order='+result.orderId+'&token='+result.token),env)).json();
  assert.equal(receipt.reference,body.reference);assert.match(receipt.orderText,/test@example.com/);assert.match(receipt.orderText,/Size: M/);assert.match(receipt.orderText,/TOTAL: R639/);
  const page=await(await worker.fetch(new Request(base+'/payment/cancel?order='+result.orderId+'&token='+result.token),env)).text();assert.match(page,/wa.me\/27603709033/);assert.match(page,/resume_order=1/);assert.match(page,/api\/order-receipt/);
+ assert.doesNotThrow(()=>new Script(page.match(/<script>([\s\S]*?)<\/script>/)[1]));
+ const success=await(await worker.fetch(new Request(base+'/payment/return?order='+result.orderId+'&token='+result.token),env)).text();assert.doesNotThrow(()=>new Script(success.match(/<script>([\s\S]*?)<\/script>/)[1]));
 });
 
 test('live checkout signs the configured merchant credentials and fails closed if missing',async()=>{
