@@ -1,4 +1,4 @@
-/* One editable cart across every collection. Payment is confirmed through WhatsApp. */
+/* One editable cart across every collection. All collections use one editable PayFast checkout. */
 document.addEventListener('DOMContentLoaded',()=>{
  const core=Rize8Cart,shipping=Rize8Shipping,catalogue=new Map(),cards=[];
  const reviewApi=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?location.origin:paymentService;
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  <label for="orderQuantity">Quantity</label><input id="orderQuantity" name="quantity" type="number" min="1" max="99" step="1" value="1" required>
  <p class="item-price order-total" aria-live="polite"></p><p class="order-help">Add this choice to your cart, then keep shopping for other designs or sizes. Choose free collection or a delivery option at checkout. Christmas shirts qualify for R180 each when your cart contains 3 or more Christmas shirts.</p>
  <button class="order-now item-save" type="submit">ADD TO CART</button><button class="order-browse item-back" type="button">Back to cart</button><p class="item-error order-status" role="alert"></p></form></section>
- <section data-cart-view="cart" hidden><div class="cart-items"></div><div class="cart-totals"></div><p class="cart-error order-status" role="alert"></p><button type="button" class="order-now cart-checkout">CHECKOUT</button><button type="button" class="order-browse continue-shopping">Continue shopping</button><p class="order-help">Edit or remove any item before ordering. Payment details will be confirmed on WhatsApp.</p></section>
+ <section data-cart-view="cart" hidden><div class="cart-items"></div><div class="cart-totals"></div><p class="cart-error order-status" role="alert"></p><button type="button" class="order-now cart-checkout">CHECKOUT</button><button type="button" class="order-browse continue-shopping">Continue shopping</button><p class="order-help">Edit or remove any item before ordering. Review your complete order, then pay securely with PayFast.</p></section>
  <section data-cart-view="delivery" hidden><div class="checkout-summary"></div><button type="button" class="order-browse change-cart">Edit cart / add or remove items</button>
  <form class="size-order-form delivery-form"><fieldset class="delivery-details"><legend>Your details &amp; delivery address</legend><p class="order-help">All fields marked * are required. <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> · <a href="returns.html" target="_blank" rel="noopener noreferrer">Returns &amp; Refunds</a> · <a href="shipping.html" target="_blank" rel="noopener noreferrer">Shipping &amp; Delivery</a> · <a href="terms.html" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a></p>
  <label for="customerName">Full name *</label><input id="customerName" name="customerName" autocomplete="name" required minlength="2" maxlength="120" pattern=".*\\S.*">
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  <label for="deliveryPostalCode">Postal code *</label><input id="deliveryPostalCode" name="deliveryPostalCode" autocomplete="postal-code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required title="Enter a four-digit South African postal code.">
  </div></fieldset>
  <button class="order-now review-submit" type="submit">REVIEW FULL ORDER</button><p class="delivery-status order-status" role="alert"></p><button type="button" class="order-browse continue-shopping">Continue shopping</button></form></section>
- <section data-cart-view="review" class="order-review" hidden><p class="review-details"></p><button type="button" class="order-edit change-cart">Edit cart / add or remove items</button><button type="button" class="order-edit edit-delivery">Edit delivery details</button><button type="button" class="order-browse continue-shopping">Continue shopping</button><div class="review-delivery"></div><label class="address-confirmation final-confirmation" for="deliveryConfirmed"><input id="deliveryConfirmed" type="checkbox" required><span></span></label><button type="button" class="order-now order-confirm">ORDER VIA WHATSAPP</button><p class="review-status order-status" role="status"></p><p class="order-help">WhatsApp opens with every item and your order reference. Tap Send to submit the request. For courier collection quotes, the delivery fee and a real participating point must be confirmed with RIZE8 Wear before payment. You can request changes in the same WhatsApp chat before paying.</p></section>`;
+ <section data-cart-view="review" class="order-review" hidden><p class="review-details"></p><button type="button" class="order-edit change-cart">Edit cart / add or remove items</button><button type="button" class="order-edit edit-delivery">Edit delivery details</button><button type="button" class="order-browse continue-shopping">Continue shopping</button><div class="review-delivery"></div><label class="address-confirmation final-confirmation" for="deliveryConfirmed"><input id="deliveryConfirmed" type="checkbox" required><span></span></label><button type="button" class="order-now payfast-confirm" hidden>PAY SECURELY WITH PAYFAST</button><p class="payfast-availability order-help" role="status"></p><p class="review-status order-status" role="status"></p><p class="order-help">PayFast securely processes the complete total shown above. You can edit designs, sizes, colours, quantities and delivery details before paying. Your cart stays saved if you cancel payment.</p></section>`;
  document.body.append(dialog);
  const itemForm=dialog.querySelector('.cart-item-form'),deliveryForm=dialog.querySelector('.delivery-form'),design=itemForm.elements.design,size=itemForm.elements.size,colour=itemForm.elements.colour,ribbon=itemForm.elements.ribbon,quantity=itemForm.elements.quantity;
  const groups=new Map();
@@ -51,15 +51,21 @@ document.addEventListener('DOMContentLoaded',()=>{
  core.SIZES.forEach(value=>size.append(new Option(value,value)));
  cancerRibbonOptions.forEach(([name,cause])=>ribbon.append(new Option(name+' — '+cause,name)));
  const storageKey='rize8-cart-v1';let cart=[],reference=null,editingId=null,previousOverflow='',deliveryMethodId=null,reviewedOrder=null,reviewBusy=false,revision=0;
- const finalConfirmation=dialog.querySelector('#deliveryConfirmed');
+ const finalConfirmation=dialog.querySelector('#deliveryConfirmed'),payfastButton=dialog.querySelector('.payfast-confirm');
+ let paymentConfig={enabled:false,sandbox:false},paymentAttempt=null;
+ const attemptKey='rize8-payfast-attempt-v1';
+ try{paymentAttempt=JSON.parse(sessionStorage.getItem(attemptKey)||'null');if(!paymentAttempt||Date.now()-paymentAttempt.savedAt>86400000)paymentAttempt=null;}catch{}
+ const resetPaymentAttempt=()=>{paymentAttempt=null;try{sessionStorage.removeItem(attemptKey);}catch{}};
+ function syncPaymentChoice(){const quote=reviewedOrder?.delivery.quoteOnly;payfastButton.hidden=false;payfastButton.disabled=!paymentConfig.enabled||!!quote;payfastButton.textContent=paymentConfig.sandbox?'TEST PAYFAST PAYMENT':'PAY SECURELY WITH PAYFAST';dialog.querySelector('.payfast-availability').textContent=quote?'Arrange a confirmed delivery option before payment.':paymentConfig.enabled?'Secure payment for the full order total shown above.':'PayFast is temporarily unavailable. Your cart is saved. Please try again shortly or contact us for assistance.';}
+ fetch(reviewApi+'/api/payment-config',{signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():{}).then(config=>{paymentConfig=config;syncPaymentChoice();}).catch(()=>syncPaymentChoice());
  const checkoutSessionKey='rize8-checkout-session-v1',sessionFields=['customerName','customerEmail','customerPhone','deliveryArea','deliveryStreet','deliveryUnit','deliverySuburb','deliveryCity','deliveryProvince','deliveryPostalCode'];
  try{const saved=JSON.parse(sessionStorage.getItem(checkoutSessionKey)||'null');if(saved&&Date.now()-saved.savedAt<86400000)for(const name of sessionFields)if(typeof saved.values?.[name]==='string')deliveryForm.elements[name].value=saved.values[name];}catch{}
  const saveCheckoutSession=()=>{try{sessionStorage.setItem(checkoutSessionKey,JSON.stringify({savedAt:Date.now(),values:Object.fromEntries(sessionFields.map(name=>[name,deliveryForm.elements[name].value]))}));}catch{}};
- try{const saved=JSON.parse(localStorage.getItem(storageKey)||'null');cart=core.restore(saved,catalogue);if(cart.length&&/^R8-[0-9]{6}-[A-F0-9]{16}$/.test(saved?.reference||''))reference=saved.reference;if(saved?.deliveryMethodId)deliveryMethodId=shipping.getMethod(saved.deliveryMethodId).id;}catch{}
+ try{const saved=JSON.parse(localStorage.getItem(storageKey)||'null');cart=core.restore(saved,catalogue);if(cart.length&&/^R8-[0-9]{6}-[A-F0-9]{16}$/.test(saved?.reference||''))reference=saved.reference;if(saved?.deliveryMethodId&&!shipping.getMethod(saved.deliveryMethodId).quoteOnly)deliveryMethodId=shipping.getMethod(saved.deliveryMethodId).id;}catch{}
  const snapshot=()=>{if(deliveryMethodId&&!shipping.availability(deliveryMethodId).available){deliveryMethodId=null;reviewedOrder=null;finalConfirmation.checked=false;syncDeliveryFields();}return core.calculate(cart,catalogue,deliveryMethodId);};
  const persist=()=>{try{localStorage.setItem(storageKey,JSON.stringify({version:1,items:cart,reference,deliveryMethodId,savedAt:Date.now()}));}catch{dialog.querySelector('.cart-feedback').textContent='Your cart is available while this page remains open. Your browser could not save it for later.';}};
  const badge=()=>{const count=snapshot().quantity;document.querySelectorAll('.cart-count').forEach(el=>el.textContent=count);document.querySelectorAll('.cart-button').forEach(el=>el.setAttribute('aria-label','Shopping Cart ('+count+' '+(count===1?'item':'items')+')'));};
- const invalidateReview=()=>{revision++;reviewedOrder=null;finalConfirmation.checked=false;};
+ const invalidateReview=()=>{revision++;reviewedOrder=null;finalConfirmation.checked=false;resetPaymentAttempt();};
  const changed=()=>{invalidateReview();if(!cart.length)reference=null;persist();badge();};
  const show=(view,title)=>{dialog.querySelector('.cart-feedback').textContent='';dialog.querySelectorAll('[data-cart-view]').forEach(section=>section.hidden=section.dataset.cartView!==view);dialog.querySelector('#cartDialogTitle').textContent=title;if(!dialog.open){previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';dialog.showModal();}dialog.scrollTop=0;dialog.querySelector('#cartDialogTitle').focus();};
  function totalsElement(order){
@@ -121,13 +127,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   const method=deliveryMethodId?shipping.getMethod(deliveryMethodId):null,addressFields=dialog.querySelector('.door-address-fields'),areaFields=dialog.querySelector('.quote-area-fields');
   addressFields.hidden=method?.kind!=='address';addressFields.querySelectorAll('input,select').forEach(field=>{field.disabled=addressFields.hidden;field.required=!addressFields.hidden&&field.name!=='deliveryUnit';});
   areaFields.hidden=!method?.quoteOnly;deliveryForm.elements.deliveryArea.disabled=areaFields.hidden;deliveryForm.elements.deliveryArea.required=!areaFields.hidden;
-  for(const card of dialog.querySelectorAll('.delivery-option')){const input=card.querySelector('input'),status=shipping.availability(input.value);input.disabled=!status.available;input.checked=input.value===deliveryMethodId;card.classList.toggle('selected',input.checked);card.classList.toggle('unavailable',!status.available);}
+  for(const card of dialog.querySelectorAll('.delivery-option')){const input=card.querySelector('input'),status=shipping.availability(input.value);input.disabled=!status.available||shipping.getMethod(input.value).quoteOnly;input.checked=input.value===deliveryMethodId;card.classList.toggle('selected',input.checked);card.classList.toggle('unavailable',!status.available);}
  }
  for(const method of shipping.methods){
   const card=document.createElement('div');card.className='delivery-option';const label=document.createElement('label'),radio=document.createElement('input'),copy=document.createElement('span'),name=document.createElement('strong'),fee=document.createElement('span'),description=document.createElement('small');
   const methodAvailability=shipping.availability(method.id);
-  radio.type='radio';radio.name='shippingMethod';radio.value=method.id;radio.required=true;radio.disabled=!methodAvailability.available;radio.checked=deliveryMethodId===method.id;radio.setAttribute('aria-label',method.label);
-  name.textContent=method.label;fee.className='delivery-fee';fee.textContent=!methodAvailability.available?'TEMPORARILY UNAVAILABLE':method.quoteOnly?'QUOTE ON WHATSAPP':method.feeCents?core.money(method.feeCents):'FREE COLLECTION';description.textContent=method.description+(!methodAvailability.available?' '+methodAvailability.reason:'');
+  radio.type='radio';radio.name='shippingMethod';radio.value=method.id;radio.required=true;radio.disabled=!methodAvailability.available||method.quoteOnly;radio.checked=deliveryMethodId===method.id;radio.setAttribute('aria-label',method.label);
+  name.textContent=method.label;fee.className='delivery-fee';fee.textContent=!methodAvailability.available?'TEMPORARILY UNAVAILABLE':method.quoteOnly?'ARRANGE BEFORE CHECKOUT':method.feeCents?core.money(method.feeCents):'FREE COLLECTION';description.textContent=(method.quoteOnly?'Contact RIZE8 Wear to arrange this courier first. Online checkout requires a confirmed delivery fee and location.':method.description)+(!methodAvailability.available?' '+methodAvailability.reason:'');
   copy.append(name,fee,description);label.append(radio,copy);card.append(label);
   if(method.officialUrl){const link=document.createElement('a');link.href=method.officialUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Visit the official '+method.courier+' website';card.append(link);}
   radio.addEventListener('change',()=>{deliveryMethodId=method.id;changed();syncDeliveryFields();drawSummary(dialog.querySelector('.checkout-summary'));});dialog.querySelector('.delivery-options').append(card);
@@ -141,16 +147,19 @@ document.addEventListener('DOMContentLoaded',()=>{
  dialog.querySelector('.viewer-close').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});dialog.addEventListener('close',()=>{document.body.style.overflow=previousOverflow;});
  deliveryForm.elements.customerPhone.addEventListener('input',()=>{const field=deliveryForm.elements.customerPhone;field.setCustomValidity(field.value.replace(/\D/g,'').length>=7?'':'Enter a valid contact number with at least seven digits.');});
  const contactDetails=order=>({customerName:order.customer.name,customerEmail:order.customer.email,customerPhone:order.customer.phone});
- async function requestReview(requireConfirmation=false){
+ function orderPayload(requireConfirmation=false){
   const fields=Object.fromEntries(new FormData(deliveryForm)),customer={name:fields.customerName,email:fields.customerEmail,phone:fields.customerPhone,street:fields.deliveryStreet,unit:fields.deliveryUnit,suburb:fields.deliverySuburb,city:fields.deliveryCity,province:fields.deliveryProvince,postalCode:fields.deliveryPostalCode};
-  const response=await fetch(reviewApi+'/api/order-review',{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(20000),body:JSON.stringify({items:cart,delivery:{methodId:deliveryMethodId,area:fields.deliveryArea||''},deliveryConfirmed:finalConfirmation.checked,requireConfirmation,customer})});
+  return {items:cart,reference,delivery:{methodId:deliveryMethodId,area:fields.deliveryArea||''},deliveryConfirmed:finalConfirmation.checked,requireConfirmation,customer};
+ }
+ async function requestReview(requireConfirmation=false){
+  const response=await fetch(reviewApi+'/api/order-review',{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(20000),body:JSON.stringify(orderPayload(requireConfirmation))});
   const result=await response.json();if(!response.ok||!result.order)throw Error(result.error||'Unable to check this order. Please try again.');return result.order;
  }
  function displayReview(order){
-  reviewedOrder=order;finalConfirmation.checked=false;dialog.querySelector('.review-details').textContent=core.orderText(order,contactDetails(order),reference);
+  reviewedOrder=order;syncPaymentChoice();finalConfirmation.checked=false;dialog.querySelector('.review-details').textContent=core.orderText(order,contactDetails(order),reference);
   dialog.querySelector('.review-delivery').textContent=['Delivery / collection details',order.delivery.label,...order.delivery.details,order.delivery.quoteOnly?'Delivery fee and final total: to be confirmed before payment.':'Delivery fee: '+(order.deliveryCents?core.money(order.deliveryCents):'FREE')+' · Total: '+core.money(order.totalCents)].join('\n');
   dialog.querySelector('.final-confirmation span').textContent=order.delivery.quoteOnly?shipping.quoteConfirmationText:shipping.confirmationText;
-  dialog.querySelector('.order-confirm').textContent=order.delivery.quoteOnly?'REQUEST DELIVERY QUOTE VIA WHATSAPP':'ORDER VIA WHATSAPP';dialog.querySelector('.review-status').textContent='';show('review',order.delivery.quoteOnly?'Review your quote request':'Review your full order');
+  dialog.querySelector('.review-status').textContent='';show('review',order.delivery.quoteOnly?'Review your quote request':'Review your full order');
  }
  async function reviewOrder(){
   if(reviewBusy)return;if(!cart.length)return openCart();if(!deliveryForm.checkValidity()){openDelivery();deliveryForm.reportValidity();return;}
@@ -158,15 +167,35 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{const order=await requestReview(false);if(!dialog.open||revision!==requestRevision){status.textContent='Your order changed. Please review it again.';return;}displayReview(order);status.textContent='';}catch(error){status.textContent=error.name==='TimeoutError'?'The order check timed out. Please try again.':error.message||'Unable to check this order. Please try again.';}finally{reviewBusy=false;button.disabled=false;}
  }
  deliveryForm.addEventListener('submit',event=>{event.preventDefault();reviewOrder();});
- dialog.querySelector('.order-confirm').addEventListener('click',async()=>{
+ async function placeOrder(){
   if(reviewBusy)return;if(!cart.length)return openCart();if(!deliveryForm.checkValidity()){openDelivery();deliveryForm.reportValidity();return;}if(!finalConfirmation.reportValidity())return;
-  const notice=dialog.querySelector('.review-status'),button=dialog.querySelector('.order-confirm'),requestRevision=revision;reviewBusy=true;button.disabled=true;notice.textContent='Checking the final details…';
+  const notice=dialog.querySelector('.review-status'),button=payfastButton,requestRevision=revision;reviewBusy=true;button.disabled=true;payfastButton.disabled=true;notice.textContent='Checking the final details…';
   try{const order=await requestReview(true);if(!dialog.open||revision!==requestRevision)return;if(!reviewedOrder||JSON.stringify(order)!==JSON.stringify(reviewedOrder)){displayReview(order);notice.textContent='Your order details or prices changed. Please review and confirm them again.';return;}
-   const message=core.orderText(order,contactDetails(order),reference||=createOrderReference());persist();notice.textContent='Opening WhatsApp. Tap Send to submit your request.';window.location.href='https://wa.me/27603709033?text='+encodeURIComponent(message);
-  }catch(error){notice.textContent=error.name==='TimeoutError'?'The order check timed out. Please try again.':error.message||'Unable to check this order. Please try again.';}finally{reviewBusy=false;button.disabled=false;}
- });
+   {
+    if(order.delivery.quoteOnly||!paymentConfig.enabled)throw Error('Choose a confirmed delivery option before payment.');
+    const payload=orderPayload(true),fingerprint=JSON.stringify({...payload,requireConfirmation:true});
+    if(!paymentAttempt||paymentAttempt.fingerprint!==fingerprint){paymentAttempt={fingerprint,token:Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join(''),savedAt:Date.now()};try{sessionStorage.setItem(attemptKey,JSON.stringify(paymentAttempt));}catch{}}
+    notice.textContent='Preparing your secure PayFast payment…';
+    const response=await fetch(reviewApi+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(20000),body:JSON.stringify({...payload,attemptToken:paymentAttempt.token,expectedTotalCents:order.totalCents})});
+    const result=await response.json();if(!response.ok)throw Error(result.error||'PayFast could not start. Your cart is saved; please try again shortly.');
+    if(!dialog.open||revision!==requestRevision)return;
+    if(!['https://www.payfast.co.za/eng/process','https://sandbox.payfast.co.za/eng/process'].includes(result.action)||result.totalCents!==order.totalCents||result.fields?.amount!==(order.totalCents/100).toFixed(2))throw Error('Payment details changed. Please review your order again.');
+    const form=document.createElement('form');form.method='POST';form.action=result.action;
+    for(const [name,value] of Object.entries(result.fields)){const input=document.createElement('input');input.type='hidden';input.name=name;input.value=String(value);form.append(input);}
+    document.body.append(form);persist();saveCheckoutSession();notice.textContent='Opening secure PayFast checkout. Your cart is saved if you return.';form.submit();return;
+   }
+
+  }catch(error){notice.textContent=error.name==='TimeoutError'?'The order check timed out. Please try again.':error.message||'Unable to check this order. Please try again.';}finally{reviewBusy=false;button.disabled=false;payfastButton.disabled=false;}
+ }
+ payfastButton.addEventListener('click',()=>placeOrder());
  document.querySelectorAll('.cart-button').forEach(button=>{button.type='button';button.addEventListener('click',openCart);});
  for(const {info,product} of cards){const button=document.createElement('button');button.type='button';button.className='order-size';button.textContent=product.cancer?'Choose T-shirt, size & ribbon':'Choose size & add to cart';button.setAttribute('aria-label',button.textContent+' for '+product.name);button.addEventListener('click',()=>openItem(product));info.append(button);}
  badge();
- if(new URLSearchParams(location.search).has('resume_order'))openCart();
+ const returnParams=new URLSearchParams(location.search);
+ if(returnParams.has('resume_order'))openCart();
+ if(returnParams.has('payment_return')){
+  const orderId=returnParams.get('order'),secret=paymentAttempt?.token;
+  if(paymentAttempt?.token===secret)fetch(reviewApi+'/api/order-status?order='+encodeURIComponent(orderId)+'&token='+encodeURIComponent(secret),{signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).then(result=>{if(result?.status==='paid'){const expected=JSON.parse(paymentAttempt.fingerprint);if(JSON.stringify(cart)===JSON.stringify(expected.items)&&reference===expected.reference){cart=[];reference=null;}resetPaymentAttempt();persist();badge();dialog.querySelector('.cart-feedback').textContent='Your payment is confirmed. Thank you!';}else openCart();}).catch(()=>openCart());
+  history.replaceState(null,'',location.pathname+location.hash);
+ }
 });

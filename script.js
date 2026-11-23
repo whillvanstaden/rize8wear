@@ -58,9 +58,6 @@ function createOrderReference(){
  const suffix=Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('').toUpperCase();
  return 'R8-'+day+'-'+suffix;
 }
-const orderChannel='whatsapp'; // PayFast integration retained for later activation.
-let payfastReady=false;
-(orderChannel==='payfast'?fetch(paymentService+'/api/payment-config'):Promise.resolve({ok:false})).then(r=>r.ok?r.json():{}).then(config=>{payfastReady=config.enabled===true;}).catch(()=>{});
 const orderEmailConfig = { publicAddress: 'sales@rize8wear.co.za', enabled: true };
 // Each collection has an independent chart dialog, copied from the original guide.
 document.addEventListener('DOMContentLoaded',()=>{

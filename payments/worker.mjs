@@ -33,7 +33,8 @@ export function validateOrder(input,{requireConfirmation=true,forPayment=true,no
   const products=new Map(Object.entries(catalogue));
   const lines=items.map((line,index)=>globalThis.Rize8Cart.normaliseLine({...line,id:'line-'+index},products));
   const order=globalThis.Rize8Cart.calculate(lines,products,method.id,now),first=order.lines[0];
-  return {...order,delivery,customer,productId:first.productId,name:order.lines.length===1?first.product.name:order.quantity+' T-shirts',audience:first.product.audience,size:first.size,colour:first.colour,ribbon:first.ribbon,unitCents:first.unitCents};
+  const reference=/^R8-[0-9]{6}-[A-F0-9]{16}$/.test(input.reference||'')?input.reference:null;
+  return {...order,reference,delivery,customer,productId:first.productId,name:order.lines.length===1?first.product.name:order.quantity+' T-shirts',audience:first.product.audience,size:first.size,colour:first.colour,ribbon:first.ribbon,unitCents:first.unitCents};
 }
 
 async function orderReview(request){
@@ -43,7 +44,7 @@ async function orderReview(request){
 
 function config(env){
   const sandbox=env.PAYFAST_MODE!=='live';
-  return {sandbox,host:sandbox?'sandbox.payfast.co.za':'www.payfast.co.za',merchantId:sandbox?'10000100':env.PAYFAST_MERCHANT_ID,merchantKey:sandbox?'46f0cd694581a':env.PAYFAST_MERCHANT_KEY,passphrase:sandbox?'':env.PAYFAST_PASSPHRASE||''};
+  return {sandbox,host:sandbox?'sandbox.payfast.co.za':'www.payfast.co.za',merchantId:sandbox?'10004002':env.PAYFAST_MERCHANT_ID,merchantKey:sandbox?'q1cd2rdny4a53':env.PAYFAST_MERCHANT_KEY,passphrase:sandbox?'payfast':env.PAYFAST_PASSPHRASE||''};
 }
 
 function allowedIp(ip){
@@ -58,13 +59,21 @@ async function checkout(request,env){
   if(Number(request.headers.get('content-length'))>64000)return json({error:'Order too large.'},413);
   let input;try{const raw=await request.text();if(raw.length>64000)throw Error();input=JSON.parse(raw);}catch{return json({error:'Invalid order.'},400);}
   let order;try{order=validateOrder(input);}catch(error){return json({error:error.message},400);}
+  if(input.expectedTotalCents!==undefined&&input.expectedTotalCents!==order.totalCents)return json({error:'Prices or delivery changed. Please review your order again before payment.'},409);
+  const secret=input.attemptToken===undefined?token():input.attemptToken;
+  if(!/^[a-f0-9]{64}$/.test(secret))return json({error:'Invalid payment attempt. Please review your order again.'},400);
+  const id='R8-PF-'+(await hash(secret)).slice(0,32),now=Date.now(),base=new URL(request.url).origin;
+  const existing=await env.DB.prepare('SELECT status, mode, details_json, created_at FROM orders WHERE id = ?').bind(id).first();
+  if(existing&&(existing.status==='paid'||existing.mode!==(cfg.sandbox?'sandbox':'live')||existing.details_json!==JSON.stringify(order)||now-existing.created_at>86400000))return json({error:existing.status==='paid'?'This order has already been paid. Please do not pay again.':'This payment attempt no longer matches your order. Review your cart again.'},409);
   const ipHash=await hash(request.headers.get('CF-Connecting-IP')||'unknown');
   const recent=await env.DB.prepare('SELECT COUNT(*) AS count FROM orders WHERE ip_hash = ? AND created_at > ?').bind(ipHash,Date.now()-3600000).first();
-  if(recent?.count>=15)return json({error:'Too many payment attempts. Please try again later.'},429);
-  const id='R8-'+crypto.randomUUID(),secret=token(),now=Date.now(),base=new URL(request.url).origin;
+  if(!existing&&recent?.count>=15)return json({error:'Too many payment attempts. Please try again later, or order via WhatsApp.'},429);
   const pairs=[['merchant_id',cfg.merchantId],['merchant_key',cfg.merchantKey],['return_url',base+'/payment/return?order='+id+'&token='+secret],['cancel_url',base+'/payment/cancel?order='+id+'&token='+secret],['notify_url',base+'/api/payfast/notify'],['name_first',order.customer.name.split(' ')[0]],['name_last',order.customer.name.split(' ').slice(1).join(' ')],['email_address',order.customer.email],['cell_number',order.customer.phone],['m_payment_id',id],['amount',money(order.totalCents)],['item_name',('RIZE8 '+order.name).slice(0,100)],['item_description',(order.quantity+' shirts; '+order.delivery.label+'; delivery '+money(order.deliveryCents)).slice(0,255)],['custom_str1',order.customer.name],['custom_str2',(order.delivery.kind==='collection'?order.delivery.label:[order.customer.street,order.customer.unit].filter(Boolean).join(', ')).slice(0,255)],['custom_str3',(order.delivery.kind==='collection'?'Collection arrangements after confirmation':[order.customer.suburb,order.customer.city,order.customer.province,order.customer.postalCode].filter(Boolean).join(', ')).slice(0,255)],['custom_str4',order.customer.phone],['email_confirmation','1'],['confirmation_address','sales@rize8wear.co.za']];
+  // Keep the same customer reference in PayFast and WhatsApp.
+  pairs.find(([key])=>key==='custom_str2')[1]=base+'/payment/return?order='+id+'&token='+secret;
+  pairs.splice(pairs.findIndex(([key])=>key==='email_confirmation'),0,['custom_str5',order.reference||id]);
   pairs.push(['signature',signature(pairs,cfg.passphrase)]);
-  await env.DB.prepare('INSERT INTO orders (id, token_hash, status, mode, total_cents, details_json, ip_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(id,await hash(secret),'awaiting_payment',cfg.sandbox?'sandbox':'live',order.totalCents,JSON.stringify(order),ipHash,now).run();
+  if(!existing)await env.DB.prepare('INSERT OR IGNORE INTO orders (id, token_hash, status, mode, total_cents, details_json, ip_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(id,await hash(secret),'awaiting_payment',cfg.sandbox?'sandbox':'live',order.totalCents,JSON.stringify(order),ipHash,now).run();
   return json({orderId:id,token:secret,action:'https://'+cfg.host+'/eng/process',fields:Object.fromEntries(pairs),totalCents:order.totalCents});
 }
 
@@ -88,20 +97,27 @@ async function notify(request,env){
   return new Response('OK');
 }
 
-async function status(request,env){
+async function status(request,env,receipt=false){
   const url=new URL(request.url),id=url.searchParams.get('order'),secret=url.searchParams.get('token');
   if(!env.DB||!id||!secret||secret.length!==64)return json({error:'Order not found.'},404);
-  const order=await env.DB.prepare('SELECT token_hash, status, total_cents, mode FROM orders WHERE id = ?').bind(id).first();
+  const order=await env.DB.prepare('SELECT token_hash, status, total_cents, mode, details_json FROM orders WHERE id = ?').bind(id).first();
   if(!order||!equal(order.token_hash,await hash(secret)))return json({error:'Order not found.'},404);
-  return json({orderId:id,status:order.status,totalCents:order.total_cents,sandbox:order.mode==='sandbox'});
+  const details=JSON.parse(order.details_json),reference=details.reference||id;
+  const result={orderId:id,reference,status:order.status,totalCents:order.total_cents,sandbox:order.mode==='sandbox'};
+  if(receipt)result.orderText=globalThis.Rize8Cart.orderText(details,{customerName:details.customer.name,customerEmail:details.customer.email,customerPhone:details.customer.phone},reference).replace("I'd like to place this combined order:",order.status==='paid'?'PayFast payment confirmed for this combined order:':'Order awaiting payment:').replace('Please confirm stock and payment details for the full order.',order.status==='paid'?'Payment recorded through PayFast.':'Payment has not been confirmed.');
+  return json(result);
 }
 
 function paymentReturn(request){
   const url=new URL(request.url),id=url.searchParams.get('order')||'',secret=url.searchParams.get('token')||'';
   const cancelled=url.pathname.endsWith('/cancel');
   // This page never marks an order paid. Only the verified ITN handler can do that.
-  const page='<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><title>RIZE8 payment</title><style>body{font:18px/1.6 Arial;max-width:620px;margin:70px auto;padding:24px}a{color:#111}button{padding:12px}</style><h1>'+(cancelled?'Payment cancelled':'Checking your payment')+'</h1><p id="paymentStatus">'+(cancelled?'Your payment was cancelled. Your order has not been marked as paid.':'Please wait while we confirm payment with PayFast.')+'</p><p><a href="'+SHOP+(cancelled?'/?resume_order=1':'/')+'#christmas-clothing">Return to RIZE8 Wear</a></p><script>const order='+JSON.stringify(id).replace(/</g,'\\u003c')+',token='+JSON.stringify(secret).replace(/</g,'\\u003c')+';async function check(){try{const r=await fetch("/api/order-status?order="+encodeURIComponent(order)+"&token="+encodeURIComponent(token));const d=await r.json();document.getElementById("paymentStatus").textContent=d.status==="paid"?(d.sandbox?"TEST PAYMENT confirmed. No real payment was made.":"Payment confirmed. Thank you! Your order reference is "+d.orderId):"Payment confirmation is pending. Please do not pay again. Keep your order reference: "+order;}catch{document.getElementById("paymentStatus").textContent="We could not check payment yet. Please contact sales@rize8wear.co.za with reference "+order;}}'+(!cancelled?'check();setTimeout(check,5000);setTimeout(check,15000);':'')+'</script>';
-  return new Response(page,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff'}});
+  const page=`<!doctype html><html lang="en"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><title>RIZE8 payment</title>
+<style>body{font:18px/1.6 Arial;background:#111;color:#fff;max-width:740px;margin:40px auto;padding:24px}a{display:inline-block;color:#fff;padding:12px 18px;border:1px solid #aaa;margin:8px 8px 8px 0}pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;border-top:1px solid #555;padding-top:20px}#whatsapp{background:#126c3d}p{overflow-wrap:anywhere}</style>
+<h1>${cancelled?'Payment cancelled':'Checking your payment'}</h1><p id="paymentStatus">${cancelled?'Checking whether payment was received. Your cart has been saved.':'Please wait while we confirm payment with PayFast.'}</p><p id="reference"></p>
+<a id="return" href="${SHOP}/?resume_order=1#christmas-clothing">Return to your saved cart</a><a id="whatsapp" hidden>Contact RIZE8 Wear on WhatsApp</a><pre id="receipt"></pre>
+<script>const order=${JSON.stringify(id).replace(/</g,'\\u003c')},token=${JSON.stringify(secret).replace(/</g,'\\u003c')},cancelled=${cancelled};let confirmed=false;async function check(){try{const r=await fetch('/api/order-receipt?order='+encodeURIComponent(order)+'&token='+encodeURIComponent(token));const d=await r.json();if(!r.ok)throw Error();confirmed=d.status==='paid';document.querySelector('h1').textContent=confirmed?'Payment confirmed':cancelled?'Payment cancelled':'Payment confirmation pending';document.getElementById('paymentStatus').textContent=confirmed?(d.sandbox?'TEST PAYMENT confirmed. No real payment was made.':'Thank you! PayFast confirmed your payment. Your order has been recorded.'):(cancelled?'Payment has not been confirmed. You can edit your saved cart, try again or order via WhatsApp. If money left your account, contact us before paying again.':'We are waiting for PayFast confirmation. Please do not pay again. Contact us if you need help.');document.getElementById('reference').textContent='Order reference: '+d.reference;document.getElementById('receipt').textContent=d.orderText;const link=document.getElementById('whatsapp');link.hidden=false;link.href='https://wa.me/27603709033?text='+encodeURIComponent((confirmed?'PayFast '+(d.sandbox?'TEST ':'')+'payment confirmed.\n':'Please check my PayFast payment before requesting payment again.\n')+d.orderText);if(confirmed){document.getElementById('return').textContent='Continue shopping';document.getElementById('return').href=${JSON.stringify(SHOP)}+'/?payment_return=1&order='+encodeURIComponent(order)+'#christmas-clothing';}}catch{document.getElementById('paymentStatus').textContent='We could not check payment yet. Please do not pay again if money left your account. Contact sales@rize8wear.co.za with reference '+order;const link=document.getElementById('whatsapp');link.hidden=false;link.href='https://wa.me/27603709033?text='+encodeURIComponent('Please help check PayFast payment reference '+order);}}check();setTimeout(()=>{if(!confirmed)check()},5000);setTimeout(()=>{if(!confirmed)check()},15000);</script></html>`;
+  return new Response(page,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff','x-robots-tag':'noindex, nofollow'}});
 }
 
 export default {async fetch(request,env){
@@ -110,11 +126,12 @@ export default {async fetch(request,env){
     if(url.pathname.startsWith('/api/')){
       if(origin&&!ORIGINS.has(origin))return json({error:'Origin not allowed.'},403);
       if(request.method==='OPTIONS')response=new Response(null,{status:204});
-      else if(url.pathname==='/api/payment-config'&&request.method==='GET')response=json({enabled:env.PAYFAST_ENABLED==='true',sandbox:env.PAYFAST_MODE!=='live'});
+      else if(url.pathname==='/api/payment-config'&&request.method==='GET')response=json({enabled:env.PAYFAST_ENABLED==='true'&&!!env.DB&&!!config(env).merchantId&&!!config(env).merchantKey,sandbox:env.PAYFAST_MODE!=='live'});
       else if(url.pathname==='/api/order-review'&&request.method==='POST')response=await orderReview(request);
       else if(url.pathname==='/api/checkout'&&request.method==='POST')response=await checkout(request,env);
       else if(url.pathname==='/api/payfast/notify'&&request.method==='POST')response=await notify(request,env);
       else if(url.pathname==='/api/order-status'&&request.method==='GET')response=await status(request,env);
+      else if(url.pathname==='/api/order-receipt'&&request.method==='GET')response=await status(request,env,true);
       else response=json({error:'Not found.'},404);
       if(origin&&ORIGINS.has(origin)){response=new Response(response.body,response);response.headers.set('access-control-allow-origin',origin);response.headers.set('vary','Origin');response.headers.set('access-control-allow-methods','GET, POST, OPTIONS');response.headers.set('access-control-allow-headers','Content-Type');}
       return response;

@@ -33,3 +33,16 @@ delivery is confirmed, and the merchant has checked the settlement account.
 No real transaction has been made by this setup.
 
 Protocol documentation: https://developers.payfast.co.za/documentation/
+
+Checkout activation (23 November 2026)
+-------------------------------------
+The storefront uses PayFast for payment; WhatsApp remains a contact channel only.
+Fixed door delivery and free business collection can be paid online. Quote-only
+couriers stay disabled until a fee and real collection point can be confirmed.
+/api/checkout accepts a random attemptToken so retries reuse the same pending
+record. A changed cart starts a new attempt. Only verified COMPLETE ITN marks paid.
+The customer reference is custom_str5. custom_str2 contains a private receipt
+link with full items, sizes, colours, quantities and delivery details. Treat that
+link as confidential. It is available in PayFast custom transaction data.
+/api/order-receipt requires the random token and includes the detailed order.
+No card details are collected or stored by this website.
