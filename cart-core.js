@@ -1,6 +1,7 @@
 /* Cart calculations shared by the storefront and its checkout checks. */
 (function(root){
  'use strict';
+ const shipping=typeof module!=='undefined'&&module.exports?require('./shipping-config.js'):root.Rize8Shipping;
  const SIZES=['S','M','L','XL','2XL','2–3 yrs','3–4 yrs','4–5 yrs','5–6 yrs','7–8 yrs','9–10 yrs','11–12 yrs','Newborn (0–1 Month)','0–3 Months','3–6 Months','6–9 Months','6–12 Months','12–18 Months','18–24 Months'];
  const RIBBONS=['Yellow','Pink','Gold','White or Pearl','Purple','Teal','Orange','Lime Green','Dark Blue','Light Blue','Gray','Black'];
  const money=cents=>'R'+(cents/100).toLocaleString('en-ZA',{maximumFractionDigits:2});
@@ -29,7 +30,7 @@
   }
   return next;
  }
- function calculate(cart,catalogue){
+ function calculate(cart,catalogue,deliveryMethodId=null){
   const groups=new Map();
   const valid=cart.map(line=>normaliseLine(line,catalogue));
   for(const line of valid){const p=catalogue.get(line.productId);if(p.bulkPrice)groups.set(p.bulkGroup,(groups.get(p.bulkGroup)||0)+line.quantity);}
@@ -39,8 +40,9 @@
    const unitCents=Math.round((discounted?product.bulkPrice:product.price)*100);
    return {...line,product,discounted,unitCents,lineCents:unitCents*line.quantity};
   });
-  const subtotalCents=lines.reduce((sum,line)=>sum+line.lineCents,0),deliveryCents=lines.length?9900:0;
-  return {lines,quantity:lines.reduce((sum,line)=>sum+line.quantity,0),subtotalCents,deliveryCents,totalCents:subtotalCents+deliveryCents};
+  const method=lines.length&&deliveryMethodId?shipping.getMethod(deliveryMethodId):null;
+  const subtotalCents=lines.reduce((sum,line)=>sum+line.lineCents,0),deliveryCents=method?method.feeCents:0;
+  return {lines,quantity:lines.reduce((sum,line)=>sum+line.quantity,0),subtotalCents,deliveryCents,totalCents:method?.quoteOnly?null:subtotalCents+deliveryCents,deliverySelected:!!method,paymentReady:!!method&&!method.quoteOnly,delivery:method?{methodId:method.id,label:method.label,kind:method.kind,courier:method.courier,feeCents:method.feeCents,quoteOnly:!!method.quoteOnly}:null};
  }
  function restore(saved,catalogue){
   if(!saved||saved.version!==1||!Array.isArray(saved.items)||saved.items.length>50||!Number.isFinite(saved.savedAt)||Date.now()-saved.savedAt>7*86400000)return [];
@@ -53,8 +55,10 @@
  }
  function orderText(snapshot,details,reference){
   if(!snapshot.lines.length)throw Error('Add a T-shirt to your cart first.');
+  if(!snapshot.deliverySelected||!snapshot.delivery?.details)throw Error('Choose and confirm your delivery details first.');
   const clean=key=>String(details[key]||'').trim();
-  return ['Order reference: '+reference,'','Hello RIZE8 Wear,',"I'd like to place this combined order:",'',snapshot.lines.map(itemText).join('\n\n'),'','Items: '+snapshot.quantity,'Subtotal: '+money(snapshot.subtotalCents),'Nationwide delivery (once per order): '+money(snapshot.deliveryCents),'TOTAL: '+money(snapshot.totalCents),'','Customer details:','Full name: '+clean('customerName'),'Email: '+clean('customerEmail'),'Contact number: '+clean('customerPhone'),'','Delivery address:',clean('deliveryStreet'),...(clean('deliveryUnit')?[clean('deliveryUnit')]:[]),clean('deliverySuburb'),clean('deliveryCity'),clean('deliveryProvince'),clean('deliveryPostalCode'),'South Africa','Customer confirmed the delivery address is correct.','','Please confirm stock and payment details for the full order.'].join('\n');
+  const pending=snapshot.delivery.quoteOnly;
+  return ['Order reference: '+reference,'','Hello RIZE8 Wear,',pending?"I'd like a delivery quote for this combined order (not ready for payment):":"I'd like to place this combined order:",'',snapshot.lines.map(itemText).join('\n\n'),'','Items: '+snapshot.quantity,'Products subtotal: '+money(snapshot.subtotalCents),'Delivery method: '+snapshot.delivery.label,'Delivery fee (once per order): '+(pending?'TO BE CONFIRMED':snapshot.deliveryCents?money(snapshot.deliveryCents):'FREE'),pending?'FINAL TOTAL: TO BE CONFIRMED BEFORE PAYMENT':'TOTAL: '+money(snapshot.totalCents),'','Customer details:','Full name: '+clean('customerName'),'Email: '+clean('customerEmail'),'Contact number: '+clean('customerPhone'),'','Delivery / collection details:',...snapshot.delivery.details,pending?'Customer understands the fee and official collection point still require confirmation.':'Customer confirmed the selected collection point or delivery address.','',pending?'Please confirm a real participating collection point, its official identifier/address, the courier fee and the final total before requesting payment.':'Please confirm stock and payment details for the full order.'].join('\n');
  }
  const api={SIZES,RIBBONS,money,normaliseLine,upsertLine,calculate,restore,itemText,orderText};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;

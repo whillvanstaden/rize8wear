@@ -1,5 +1,7 @@
 import {md5} from './md5.mjs';
 import {catalogue} from './catalogue.mjs';
+import '../shipping-config.js';
+import '../cart-core.js';
 
 const SHOP='https://rize8wear.co.za';
 const ORIGINS=new Set([SHOP,'https://www.rize8wear.co.za','https://rize8wear-preview.grey-haven-7361.chatgpt.site']);
@@ -15,22 +17,28 @@ const equal=(a,b)=>{if(typeof a!=='string'||typeof b!=='string'||a.length!==b.le
 const token=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join('');
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),n=>n.toString(16).padStart(2,'0')).join('');
 
-export function validateOrder(input){
-  const product=catalogue[input.productId];
-  if(!product)throw Error('Please choose an available T-shirt.');
-  const quantity=Number(input.quantity);
-  if(!Number.isInteger(quantity)||quantity<1||quantity>99)throw Error('Choose a quantity from 1 to 99.');
-  if(!SIZES.includes(input.size)||!product.colours.includes(input.colour))throw Error('Choose a valid size and T-shirt colour.');
-  if(product.cancer&&!RIBBONS.includes(input.ribbon))throw Error('Choose a valid ribbon colour.');
+export function validateOrder(input,{requireConfirmation=true,forPayment=true}={}){
+  const selection=input.delivery;
+  const method=globalThis.Rize8Shipping.getMethod(selection?.methodId);
   const customer={};
-  for(const [field,max] of Object.entries({name:120,email:100,phone:25,street:200,unit:120,suburb:100,city:100,province:40,postalCode:4})){
+  for(const [field,max] of Object.entries({name:120,email:254,phone:25})){
     const value=String(input.customer?.[field]||'').trim();
-    if((field!=='unit'&&!value)||value.length>max||/[\u0000-\u001f]/.test(value))throw Error('Enter your complete customer and delivery details.');
-    customer[field]=value;
+    if(!value||value.length>max||/[\u0000-\u001f]/.test(value))throw Error('Enter your complete customer contact details.');customer[field]=value;
   }
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)||customer.phone.replace(/\D/g,'').length<7||!/^\d{4}$/.test(customer.postalCode)||!PROVINCES.includes(customer.province)||input.addressConfirmed!==true)throw Error('Check your email, contact number, province and postal code, and confirm your address.');
-  const unitCents=product.christmas?(quantity>=3?18000:19900):25000;
-  return {productId:input.productId,name:product.name,audience:product.audience,size:input.size,colour:input.colour,ribbon:product.cancer?input.ribbon:null,quantity,unitCents,deliveryCents:9900,totalCents:unitCents*quantity+9900,customer};
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)||customer.phone.replace(/\D/g,'').length<7)throw Error('Check your email and contact number.');
+  if(method.kind==='address')Object.assign(customer,globalThis.Rize8Shipping.addressFrom(input.customer));
+  const delivery=globalThis.Rize8Shipping.validateDelivery(selection,customer,{requireConfirmation,confirmed:input.deliveryConfirmed===true,forPayment});
+  const items=Array.isArray(input.items)?input.items:[input];
+  if(!items.length||items.length>50)throw Error('Add between one and 50 choices to your cart.');
+  const products=new Map(Object.entries(catalogue));
+  const lines=items.map((line,index)=>globalThis.Rize8Cart.normaliseLine({...line,id:'line-'+index},products));
+  const order=globalThis.Rize8Cart.calculate(lines,products,method.id),first=order.lines[0];
+  return {...order,delivery,customer,productId:first.productId,name:order.lines.length===1?first.product.name:order.quantity+' T-shirts',audience:first.product.audience,size:first.size,colour:first.colour,ribbon:first.ribbon,unitCents:first.unitCents};
+}
+
+async function orderReview(request){
+ let input;try{const raw=await request.text();if(raw.length>64000)throw Error();input=JSON.parse(raw);}catch{return json({error:'Invalid order.'},400);}
+ try{return json({order:validateOrder(input,{requireConfirmation:input.requireConfirmation===true,forPayment:false})});}catch(error){return json({error:error.message},400);}
 }
 
 function config(env){
@@ -47,14 +55,14 @@ async function checkout(request,env){
   if(env.PAYFAST_ENABLED!=='true')return json({error:'Online payments are not active yet. Please contact RIZE8 Wear.'},503);
   const cfg=config(env);
   if(!env.DB||!cfg.merchantId||!cfg.merchantKey)return json({error:'Payment setup is incomplete.'},503);
-  if(Number(request.headers.get('content-length'))>12000)return json({error:'Order too large.'},413);
-  let input;try{const raw=await request.text();if(raw.length>12000)throw Error();input=JSON.parse(raw);}catch{return json({error:'Invalid order.'},400);}
+  if(Number(request.headers.get('content-length'))>64000)return json({error:'Order too large.'},413);
+  let input;try{const raw=await request.text();if(raw.length>64000)throw Error();input=JSON.parse(raw);}catch{return json({error:'Invalid order.'},400);}
   let order;try{order=validateOrder(input);}catch(error){return json({error:error.message},400);}
   const ipHash=await hash(request.headers.get('CF-Connecting-IP')||'unknown');
   const recent=await env.DB.prepare('SELECT COUNT(*) AS count FROM orders WHERE ip_hash = ? AND created_at > ?').bind(ipHash,Date.now()-3600000).first();
   if(recent?.count>=15)return json({error:'Too many payment attempts. Please try again later.'},429);
   const id='R8-'+crypto.randomUUID(),secret=token(),now=Date.now(),base=new URL(request.url).origin;
-  const pairs=[['merchant_id',cfg.merchantId],['merchant_key',cfg.merchantKey],['return_url',base+'/payment/return?order='+id+'&token='+secret],['cancel_url',base+'/payment/cancel?order='+id+'&token='+secret],['notify_url',base+'/api/payfast/notify'],['name_first',order.customer.name.split(' ')[0]],['name_last',order.customer.name.split(' ').slice(1).join(' ')],['email_address',order.customer.email],['cell_number',order.customer.phone],['m_payment_id',id],['amount',money(order.totalCents)],['item_name',('RIZE8 '+order.name).slice(0,100)],['item_description',(order.audience+'; '+order.size+'; '+order.colour+'; '+(order.ribbon?'ribbon '+order.ribbon+'; ':'')+'qty '+order.quantity+'; delivery R99').slice(0,255)],['custom_str1',order.customer.name],['custom_str2',(order.customer.street+', '+order.customer.unit).slice(0,255)],['custom_str3',(order.customer.suburb+', '+order.customer.city+', '+order.customer.province+' '+order.customer.postalCode).slice(0,255)],['custom_str4',order.customer.phone],['email_confirmation','1'],['confirmation_address','sales@rize8wear.co.za']];
+  const pairs=[['merchant_id',cfg.merchantId],['merchant_key',cfg.merchantKey],['return_url',base+'/payment/return?order='+id+'&token='+secret],['cancel_url',base+'/payment/cancel?order='+id+'&token='+secret],['notify_url',base+'/api/payfast/notify'],['name_first',order.customer.name.split(' ')[0]],['name_last',order.customer.name.split(' ').slice(1).join(' ')],['email_address',order.customer.email],['cell_number',order.customer.phone],['m_payment_id',id],['amount',money(order.totalCents)],['item_name',('RIZE8 '+order.name).slice(0,100)],['item_description',(order.quantity+' shirts; '+order.delivery.label+'; delivery '+money(order.deliveryCents)).slice(0,255)],['custom_str1',order.customer.name],['custom_str2',(order.delivery.kind==='collection'?order.delivery.label:[order.customer.street,order.customer.unit].filter(Boolean).join(', ')).slice(0,255)],['custom_str3',(order.delivery.kind==='collection'?'Collection arrangements after confirmation':[order.customer.suburb,order.customer.city,order.customer.province,order.customer.postalCode].filter(Boolean).join(', ')).slice(0,255)],['custom_str4',order.customer.phone],['email_confirmation','1'],['confirmation_address','sales@rize8wear.co.za']];
   pairs.push(['signature',signature(pairs,cfg.passphrase)]);
   await env.DB.prepare('INSERT INTO orders (id, token_hash, status, mode, total_cents, details_json, ip_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(id,await hash(secret),'awaiting_payment',cfg.sandbox?'sandbox':'live',order.totalCents,JSON.stringify(order),ipHash,now).run();
   return json({orderId:id,token:secret,action:'https://'+cfg.host+'/eng/process',fields:Object.fromEntries(pairs),totalCents:order.totalCents});
@@ -103,6 +111,7 @@ export default {async fetch(request,env){
       if(origin&&!ORIGINS.has(origin))return json({error:'Origin not allowed.'},403);
       if(request.method==='OPTIONS')response=new Response(null,{status:204});
       else if(url.pathname==='/api/payment-config'&&request.method==='GET')response=json({enabled:env.PAYFAST_ENABLED==='true',sandbox:env.PAYFAST_MODE!=='live'});
+      else if(url.pathname==='/api/order-review'&&request.method==='POST')response=await orderReview(request);
       else if(url.pathname==='/api/checkout'&&request.method==='POST')response=await checkout(request,env);
       else if(url.pathname==='/api/payfast/notify'&&request.method==='POST')response=await notify(request,env);
       else if(url.pathname==='/api/order-status'&&request.method==='GET')response=await status(request,env);

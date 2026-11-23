@@ -1516,3 +1516,22 @@ button {
 .cart-dialog .order-status[role=alert]{color:#a41010;}
 .cart-dialog .order-edit{min-height:46px;padding:10px;}
 @media(max-width:480px){.cart-dialog{padding:42px 16px 20px;}.cart-line{grid-template-columns:64px minmax(0,1fr);gap:12px;}.cart-line img{width:64px;height:90px;}.cart-dialog .cart-line h3{font-size:14px;}}
+
+/* Delivery choices and final customer confirmation. */
+.cart-dialog .delivery-methods{margin:10px 0;padding:16px 0;border:0;border-top:1px solid #ccc;min-width:0;}
+.cart-dialog .delivery-methods legend{font:800 18px/1.4 Montserrat,sans-serif;}
+.delivery-options{display:grid;gap:12px;}
+.delivery-option{padding:14px;border:1px solid #aaa;border-radius:4px;background:#fff;}
+.delivery-option.selected{border:2px solid #aa7d00;padding:13px;background:#fffbee;}
+.cart-dialog .delivery-option label{display:flex;align-items:flex-start;gap:12px;cursor:pointer;}
+.cart-dialog .delivery-option input[type=radio]{width:20px;min-width:20px;min-height:20px;height:20px;margin:2px 0 0;padding:0;accent-color:#111;}
+.delivery-option strong,.delivery-option small,.delivery-fee{display:block;}
+.delivery-option strong{font-size:14px;line-height:1.45;}.delivery-fee{font-weight:800;margin-top:5px;}
+.delivery-option small{font-size:14px;line-height:1.5;margin-top:7px;font-weight:400;color:#555;}
+.delivery-option a{display:inline-block;margin:10px 0 0 32px;font:600 14px/1.5 Montserrat,sans-serif;color:#333;text-decoration:underline;}
+.door-address-fields,.quote-area-fields{display:grid;gap:10px;}
+.door-address-fields[hidden],.quote-area-fields[hidden]{display:none;}
+.review-delivery{white-space:pre-line;font:600 14px/1.7 Montserrat,sans-serif;padding:16px;margin-top:20px;background:#fff;border:1px solid #aaa;overflow-wrap:anywhere;}
+.cart-dialog .final-confirmation{display:flex;align-items:flex-start;gap:12px;margin:16px 0;font:700 14px/1.6 Montserrat,sans-serif;}
+.cart-dialog .final-confirmation input{width:22px;min-width:22px;height:22px;margin:2px 0 0;accent-color:#111;}
+.cart-dialog button:disabled{opacity:.6;cursor:wait;}
