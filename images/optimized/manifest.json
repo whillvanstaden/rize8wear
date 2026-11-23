@@ -1,0 +1,762 @@
+{
+  "images/hero-full-mobile.png": {
+    "originalBytes": 1888875,
+    "width": 1254,
+    "height": 1254,
+    "full": {
+      "path": "images/optimized/10fe5b9bd4d6-hero.webp",
+      "width": 960,
+      "bytes": 65882
+    }
+  },
+  "images/hero-full-desktop.png": {
+    "originalBytes": 1952161,
+    "width": 2172,
+    "height": 724,
+    "full": {
+      "path": "images/optimized/34b0c50af934-hero.webp",
+      "width": 1920,
+      "bytes": 98152
+    }
+  },
+  "images/CHRISTMAS/christmas-mom.png": {
+    "originalBytes": 1809749,
+    "width": 1082,
+    "height": 1454,
+    "small": {
+      "path": "images/optimized/8939073baa20-480.webp",
+      "width": 480,
+      "bytes": 21192
+    },
+    "medium": {
+      "path": "images/optimized/8939073baa20-960.webp",
+      "width": 960,
+      "bytes": 60154
+    },
+    "full": {
+      "path": "images/optimized/8939073baa20-full.webp",
+      "width": 1082,
+      "bytes": 91622
+    }
+  },
+  "images/CHRISTMAS/christmas-dad.png": {
+    "originalBytes": 1898897,
+    "width": 1122,
+    "height": 1402,
+    "small": {
+      "path": "images/optimized/6912e85e535f-480.webp",
+      "width": 480,
+      "bytes": 20942
+    },
+    "medium": {
+      "path": "images/optimized/6912e85e535f-960.webp",
+      "width": 960,
+      "bytes": 61266
+    },
+    "full": {
+      "path": "images/optimized/6912e85e535f-full.webp",
+      "width": 1122,
+      "bytes": 100244
+    }
+  },
+  "images/CHRISTMAS/christmas-girl.png": {
+    "originalBytes": 1962959,
+    "width": 1254,
+    "height": 1254,
+    "small": {
+      "path": "images/optimized/7acee882f2a4-480.webp",
+      "width": 480,
+      "bytes": 19608
+    },
+    "medium": {
+      "path": "images/optimized/7acee882f2a4-960.webp",
+      "width": 960,
+      "bytes": 61674
+    },
+    "full": {
+      "path": "images/optimized/7acee882f2a4-full.webp",
+      "width": 1254,
+      "bytes": 123772
+    }
+  },
+  "images/CHRISTMAS/christmas-nativity.png": {
+    "originalBytes": 1918072,
+    "width": 1122,
+    "height": 1402,
+    "small": {
+      "path": "images/optimized/74b1e43a6fc1-480.webp",
+      "width": 480,
+      "bytes": 20470
+    },
+    "medium": {
+      "path": "images/optimized/74b1e43a6fc1-960.webp",
+      "width": 960,
+      "bytes": 62494
+    },
+    "full": {
+      "path": "images/optimized/74b1e43a6fc1-full.webp",
+      "width": 1122,
+      "bytes": 99480
+    }
+  },
+  "images/CHRISTMAS/smith-family-wreath.png": {
+    "originalBytes": 2428296,
+    "width": 1254,
+    "height": 1254,
+    "small": {
+      "path": "images/optimized/4080202c6b9f-480.webp",
+      "width": 480,
+      "bytes": 57040
+    },
+    "medium": {
+      "path": "images/optimized/4080202c6b9f-960.webp",
+      "width": 960,
+      "bytes": 163178
+    },
+    "full": {
+      "path": "images/optimized/4080202c6b9f-full.webp",
+      "width": 1254,
+      "bytes": 280884
+    }
+  },
+  "images/CHRISTMAS/cele-family-white-tees.png": {
+    "originalBytes": 2585675,
+    "width": 1254,
+    "height": 1254,
+    "small": {
+      "path": "images/optimized/c41fc6c1b6a3-480.webp",
+      "width": 480,
+      "bytes": 57058
+    },
+    "medium": {
+      "path": "images/optimized/c41fc6c1b6a3-960.webp",
+      "width": 960,
+      "bytes": 171014
+    },
+    "full": {
+      "path": "images/optimized/c41fc6c1b6a3-full.webp",
+      "width": 1254,
+      "bytes": 303092
+    }
+  },
+  "images/CHRISTMAS/merry-christmas-women.png": {
+    "originalBytes": 1968387,
+    "width": 1122,
+    "height": 1402,
+    "small": {
+      "path": "images/optimized/3e853dd66dfb-480.webp",
+      "width": 480,
+      "bytes": 17544
+    },
+    "medium": {
+      "path": "images/optimized/3e853dd66dfb-960.webp",
+      "width": 960,
+      "bytes": 54424
+    },
+    "full": {
+      "path": "images/optimized/3e853dd66dfb-full.webp",
+      "width": 1122,
+      "bytes": 93068
+    }
+  },
+  "images/CHRISTMAS/merry-christmas-men.png": {
+    "originalBytes": 1973520,
+    "width": 1122,
+    "height": 1402,
+    "small": {
+      "path": "images/optimized/7fe50fa643c5-480.webp",
+      "width": 480,
+      "bytes": 18886
+    },
+    "medium": {
+      "path": "images/optimized/7fe50fa643c5-960.webp",
+      "width": 960,
+      "bytes": 62380
+    },
+    "full": {
+      "path": "images/optimized/7fe50fa643c5-full.webp",
+      "width": 1122,
+      "bytes": 108088
+    }
+  },
+  "OCT/MODELS/READY I hate cancer/Realistic Cancer Awareness T-Shirt Portrait.png": {
+    "originalBytes": 2123440,
+    "width": 941,
+    "height": 1672,
+    "small": {
+      "path": "images/optimized/1d3904d883dc-480.webp",
+      "width": 480,
+      "bytes": 29486
+    },
+    "medium": {
+      "path": "images/optimized/1d3904d883dc-960.webp",
+      "width": 941,
+      "bytes": 90634
+    },
+    "full": {
+      "path": "images/optimized/1d3904d883dc-full.webp",
+      "width": 941,
+      "bytes": 118176
+    }
+  },
+  "OCT/MODELS/READY I hate cancer/Smiling Woman in Cancer Awareness Tee.png": {
+    "originalBytes": 2679570,
+    "width": 941,
+    "height": 1672,
+    "small": {
+      "path": "images/optimized/0d1162e6e6f0-480.webp",
+      "width": 480,
+      "bytes": 75050
+    },
+    "medium": {
+      "path": "images/optimized/0d1162e6e6f0-960.webp",
+      "width": 941,
+      "bytes": 208796
+    },
+    "full": {
+      "path": "images/optimized/0d1162e6e6f0-full.webp",
+      "width": 941,
+      "bytes": 260938
+    }
+  },
+  "images/DRUG-AWARENESS/recovery-is-possible.png": {
+    "originalBytes": 2195002,
+    "width": 941,
+    "height": 1672,
+    "small": {
+      "path": "images/optimized/beed299ec25f-480.webp",
+      "width": 480,
+      "bytes": 40224
+    },
+    "medium": {
+      "path": "images/optimized/beed299ec25f-960.webp",
+      "width": 941,
+      "bytes": 124362
+    },
+    "full": {
+      "path": "images/optimized/beed299ec25f-full.webp",
+      "width": 941,
+      "bytes": 168050
+    }
+  },
+  "images/DRUG-AWARENESS/say-no-be-happy.png": {
+    "originalBytes": 2262917,
+    "width": 931,
+    "height": 1690,
+    "small": {
+      "path": "images/optimized/912939443933-480.webp",
+      "width": 480,
+      "bytes": 59372
+    },
+    "medium": {
+      "path": "images/optimized/912939443933-960.webp",
+      "width": 931,
+      "bytes": 155248
+    },
+    "full": {
+      "path": "images/optimized/912939443933-full.webp",
+      "width": 931,
+      "bytes": 196206
+    }
+  },
+  "images/DRUG-AWARENESS/your-life-matters.png": {
+    "originalBytes": 1799810,
+    "width": 922,
+    "height": 1706,
+    "small": {
+      "path": "images/optimized/9a2d2d7e23fd-480.webp",
+      "width": 480,
+      "bytes": 25408
+    },
+    "medium": {
+      "path": "images/optimized/9a2d2d7e23fd-960.webp",
+      "width": 922,
+      "bytes": 70790
+    },
+    "full": {
+      "path": "images/optimized/9a2d2d7e23fd-full.webp",
+      "width": 922,
+      "bytes": 89598
+    }
+  },
+  "images/DRUG-AWARENESS/just-say-no.png": {
+    "originalBytes": 1945747,
+    "width": 998,
+    "height": 1576,
+    "small": {
+      "path": "images/optimized/857c577b1429-480.webp",
+      "width": 480,
+      "bytes": 28448
+    },
+    "medium": {
+      "path": "images/optimized/857c577b1429-960.webp",
+      "width": 960,
+      "bytes": 94008
+    },
+    "full": {
+      "path": "images/optimized/857c577b1429-full.webp",
+      "width": 998,
+      "bytes": 135486
+    }
+  },
+  "OCT/MODELS/Ready OUtshine the darkness/outshine-men-corrected.png": {
+    "originalBytes": 1784213,
+    "width": 941,
+    "height": 1672,
+    "small": {
+      "path": "images/optimized/ae5a991600df-480.webp",
+      "width": 480,
+      "bytes": 23268
+    },
+    "medium": {
+      "path": "images/optimized/ae5a991600df-960.webp",
+      "width": 941,
+      "bytes": 63156
+    },
+    "full": {
+      "path": "images/optimized/ae5a991600df-full.webp",
+      "width": 941,
+      "bytes": 81886
+    }
+  },
+  "images/MENS CHRISTIAN/jesus freak.png": {
+    "originalBytes": 9025336,
+    "width": 2430,
+    "height": 4320,
+    "small": {
+      "path": "images/optimized/3401bf50ea20-480.webp",
+      "width": 480,
+      "bytes": 32862
+    },
+    "medium": {
+      "path": "images/optimized/3401bf50ea20-960.webp",
+      "width": 960,
+      "bytes": 107740
+    },
+    "full": {
+      "path": "images/optimized/3401bf50ea20-full.webp",
+      "width": 1600,
+      "bytes": 302786
+    }
+  },
+  "images/MENS CHRISTIAN/beloved.png": {
+    "originalBytes": 7827372,
+    "width": 2430,
+    "height": 4320,
+    "small": {
+      "path": "images/optimized/ca62a40a2aeb-480.webp",
+      "width": 480,
+      "bytes": 50448
+    },
+    "medium": {
+      "path": "images/optimized/ca62a40a2aeb-960.webp",
+      "width": 960,
+      "bytes": 161612
+    },
+    "full": {
+      "path": "images/optimized/ca62a40a2aeb-full.webp",
+      "width": 1600,
+      "bytes": 419456
+    }
+  },
+  "images/MENS LIFESTYLE/hero-clean-neck.png": {
+    "originalBytes": 1951886,
+    "width": 941,
+    "height": 1672,
+    "small": {
+      "path": "images/optimized/3e90582d38b5-480.webp",
+      "width": 480,
+      "bytes": 31318
+    },
+    "medium": {
+      "path": "images/optimized/3e90582d38b5-960.webp",
+      "width": 941,
+      "bytes": 87260
+    },
+    "full": {
+      "path": "images/optimized/3e90582d38b5-full.webp",
+      "width": 941,
+      "bytes": 113494
+    }
+  },
+  "images/CAP-LOGO-MODELS/joy-of-the-lord.png": {
+    "originalBytes": 2755909,
+    "width": 941,
+    "height": 1672,
+    "small": {
+      "path": "images/optimized/095a3f34670e-480.webp",
+      "width": 480,
+      "bytes": 88332
+    },
+    "medium": {
+      "path": "images/optimized/095a3f34670e-960.webp",
+      "width": 941,
+      "bytes": 255638
+    },
+    "full": {
+      "path": "images/optimized/095a3f34670e-full.webp",
+      "width": 941,
+      "bytes": 318822
+    }
+  },
+  "images/CAP-LOGO-MODELS/proudly-christian.png": {
+    "originalBytes": 2332997,
+    "width": 928,
+    "height": 1695,
+    "small": {
+      "path": "images/optimized/62d846e32586-480.webp",
+      "width": 480,
+      "bytes": 54204
+    },
+    "medium": {
+      "path": "images/optimized/62d846e32586-960.webp",
+      "width": 928,
+      "bytes": 140460
+    },
+    "full": {
+      "path": "images/optimized/62d846e32586-full.webp",
+      "width": 928,
+      "bytes": 183408
+    }
+  },
+  "images/CAP-LOGO-MODELS/christian-chick.png": {
+    "originalBytes": 1985647,
+    "width": 928,
+    "height": 1694,
+    "small": {
+      "path": "images/optimized/080d08074dbe-480.webp",
+      "width": 480,
+      "bytes": 36652
+    },
+    "medium": {
+      "path": "images/optimized/080d08074dbe-960.webp",
+      "width": 928,
+      "bytes": 98018
+    },
+    "full": {
+      "path": "images/optimized/080d08074dbe-full.webp",
+      "width": 928,
+      "bytes": 132344
+    }
+  },
+  "images/CAP-LOGO-MODELS/outshine-the-darkness.png": {
+    "originalBytes": 1980399,
+    "width": 937,
+    "height": 1678,
+    "small": {
+      "path": "images/optimized/f4a9f1ed2ccb-480.webp",
+      "width": 480,
+      "bytes": 26380
+    },
+    "medium": {
+      "path": "images/optimized/f4a9f1ed2ccb-960.webp",
+      "width": 937,
+      "bytes": 77182
+    },
+    "full": {
+      "path": "images/optimized/f4a9f1ed2ccb-full.webp",
+      "width": 937,
+      "bytes": 102148
+    }
+  },
+  "images/about-group-hands-up.png": {
+    "originalBytes": 2312185,
+    "width": 1448,
+    "height": 1086,
+    "small": {
+      "path": "images/optimized/89955c29f012-480.webp",
+      "width": 480,
+      "bytes": 25474
+    },
+    "medium": {
+      "path": "images/optimized/89955c29f012-960.webp",
+      "width": 960,
+      "bytes": 84742
+    },
+    "full": {
+      "path": "images/optimized/89955c29f012-full.webp",
+      "width": 1448,
+      "bytes": 197306
+    }
+  },
+  "images/MENS LIFESTYLE/ChatGPT Image Sep 11, 2026, 05_57_38 AM.png": {
+    "originalBytes": 2419282,
+    "width": 1024,
+    "height": 1536,
+    "small": {
+      "path": "images/optimized/636e70faba5e-480.webp",
+      "width": 480,
+      "bytes": 28070
+    },
+    "medium": {
+      "path": "images/optimized/636e70faba5e-960.webp",
+      "width": 960,
+      "bytes": 96580
+    },
+    "full": {
+      "path": "images/optimized/636e70faba5e-full.webp",
+      "width": 1024,
+      "bytes": 149526
+    }
+  },
+  "images/MENS CHRISTIAN/cross.png": {
+    "originalBytes": 10067812,
+    "width": 2430,
+    "height": 4320,
+    "small": {
+      "path": "images/optimized/184bb11cc1ac-480.webp",
+      "width": 480,
+      "bytes": 36806
+    },
+    "medium": {
+      "path": "images/optimized/184bb11cc1ac-960.webp",
+      "width": 960,
+      "bytes": 131426
+    },
+    "full": {
+      "path": "images/optimized/184bb11cc1ac-full.webp",
+      "width": 1600,
+      "bytes": 397108
+    }
+  },
+  "images/MENS CHRISTIAN/gospel gangsta.png": {
+    "originalBytes": 6234359,
+    "width": 2430,
+    "height": 4320,
+    "small": {
+      "path": "images/optimized/7463ce6e2225-480.webp",
+      "width": 480,
+      "bytes": 31164
+    },
+    "medium": {
+      "path": "images/optimized/7463ce6e2225-960.webp",
+      "width": 960,
+      "bytes": 87226
+    },
+    "full": {
+      "path": "images/optimized/7463ce6e2225-full.webp",
+      "width": 1600,
+      "bytes": 221826
+    }
+  },
+  "images/MENS CHRISTIAN/ChatGPT Image Sep 14, 2026, 08_19_27 PM.png": {
+    "originalBytes": 1858388,
+    "width": 941,
+    "height": 1672,
+    "small": {
+      "path": "images/optimized/51cb2818d992-480.webp",
+      "width": 480,
+      "bytes": 33138
+    },
+    "medium": {
+      "path": "images/optimized/51cb2818d992-960.webp",
+      "width": 941,
+      "bytes": 93074
+    },
+    "full": {
+      "path": "images/optimized/51cb2818d992-full.webp",
+      "width": 941,
+      "bytes": 127074
+    }
+  },
+  "images/jesus.png": {
+    "originalBytes": 11092311,
+    "width": 2430,
+    "height": 4320,
+    "small": {
+      "path": "images/optimized/52b20a231642-480.webp",
+      "width": 480,
+      "bytes": 58816
+    },
+    "medium": {
+      "path": "images/optimized/52b20a231642-960.webp",
+      "width": 960,
+      "bytes": 217242
+    },
+    "full": {
+      "path": "images/optimized/52b20a231642-full.webp",
+      "width": 1600,
+      "bytes": 555826
+    }
+  },
+  "images/MENS LIFESTYLE/life 1.png": {
+    "originalBytes": 4178460,
+    "width": 2025,
+    "height": 3600,
+    "small": {
+      "path": "images/optimized/fa553c5b3f49-480.webp",
+      "width": 480,
+      "bytes": 20240
+    },
+    "medium": {
+      "path": "images/optimized/fa553c5b3f49-960.webp",
+      "width": 960,
+      "bytes": 61314
+    },
+    "full": {
+      "path": "images/optimized/fa553c5b3f49-full.webp",
+      "width": 1600,
+      "bytes": 168058
+    }
+  },
+  "images/MENS LIFESTYLE/lif man 5.png": {
+    "originalBytes": 9195462,
+    "width": 2025,
+    "height": 3600,
+    "small": {
+      "path": "images/optimized/e3e1a7c89192-480.webp",
+      "width": 480,
+      "bytes": 40194
+    },
+    "medium": {
+      "path": "images/optimized/e3e1a7c89192-960.webp",
+      "width": 960,
+      "bytes": 141700
+    },
+    "full": {
+      "path": "images/optimized/e3e1a7c89192-full.webp",
+      "width": 1600,
+      "bytes": 522004
+    }
+  },
+  "images/CAP-LOGO-MODELS/make-space-for-joy.png": {
+    "originalBytes": 2004529,
+    "width": 1008,
+    "height": 1561,
+    "small": {
+      "path": "images/optimized/26b7e39eafc9-480.webp",
+      "width": 480,
+      "bytes": 25826
+    },
+    "medium": {
+      "path": "images/optimized/26b7e39eafc9-960.webp",
+      "width": 960,
+      "bytes": 82194
+    },
+    "full": {
+      "path": "images/optimized/26b7e39eafc9-full.webp",
+      "width": 1008,
+      "bytes": 113482
+    }
+  },
+  "images/FEMALE LIFESTYLE/life wom 1.png": {
+    "originalBytes": 2759710,
+    "width": 1024,
+    "height": 1536,
+    "small": {
+      "path": "images/optimized/a91b8d4fb25a-480.webp",
+      "width": 480,
+      "bytes": 52828
+    },
+    "medium": {
+      "path": "images/optimized/a91b8d4fb25a-960.webp",
+      "width": 960,
+      "bytes": 194950
+    },
+    "full": {
+      "path": "images/optimized/a91b8d4fb25a-full.webp",
+      "width": 1024,
+      "bytes": 294200
+    }
+  },
+  "images/CAP-LOGO-MODELS/good-vibes-only.png": {
+    "originalBytes": 1419604,
+    "width": 901,
+    "height": 1744,
+    "small": {
+      "path": "images/optimized/8bbe07d227a8-480.webp",
+      "width": 480,
+      "bytes": 21476
+    },
+    "medium": {
+      "path": "images/optimized/8bbe07d227a8-960.webp",
+      "width": 901,
+      "bytes": 55614
+    },
+    "full": {
+      "path": "images/optimized/8bbe07d227a8-full.webp",
+      "width": 901,
+      "bytes": 73590
+    }
+  },
+  "images/CAP-LOGO-MODELS/trust-god.png": {
+    "originalBytes": 1445571,
+    "width": 908,
+    "height": 1732,
+    "small": {
+      "path": "images/optimized/4fc293122ff2-480.webp",
+      "width": 480,
+      "bytes": 20130
+    },
+    "medium": {
+      "path": "images/optimized/4fc293122ff2-960.webp",
+      "width": 908,
+      "bytes": 55586
+    },
+    "full": {
+      "path": "images/optimized/4fc293122ff2-full.webp",
+      "width": 908,
+      "bytes": 70942
+    }
+  },
+  "images/CAP-LOGO-MODELS/beloved-chosen-still-learning.png": {
+    "originalBytes": 1891187,
+    "width": 1015,
+    "height": 1549,
+    "small": {
+      "path": "images/optimized/be2b1a0ed4f0-480.webp",
+      "width": 480,
+      "bytes": 21306
+    },
+    "medium": {
+      "path": "images/optimized/be2b1a0ed4f0-960.webp",
+      "width": 960,
+      "bytes": 63224
+    },
+    "full": {
+      "path": "images/optimized/be2b1a0ed4f0-full.webp",
+      "width": 1015,
+      "bytes": 89012
+    }
+  },
+  "images/CAP-LOGO-MODELS/love-wins.png": {
+    "originalBytes": 2606396,
+    "width": 941,
+    "height": 1672,
+    "small": {
+      "path": "images/optimized/155acdce5111-480.webp",
+      "width": 480,
+      "bytes": 75868
+    },
+    "medium": {
+      "path": "images/optimized/155acdce5111-960.webp",
+      "width": 941,
+      "bytes": 215968
+    },
+    "full": {
+      "path": "images/optimized/155acdce5111-full.webp",
+      "width": 941,
+      "bytes": 272560
+    }
+  },
+  "images/SIZE-GUIDES/christmas-size-guide-final.png": {
+    "originalBytes": 776298,
+    "width": 1149,
+    "height": 1368,
+    "full": {
+      "path": "images/optimized/b0a0cdf6cc35-chart.webp",
+      "width": 1149,
+      "bytes": 581334
+    }
+  },
+  "images/SIZE-GUIDES/rize8-size-guide.png": {
+    "originalBytes": 1249114,
+    "width": 1149,
+    "height": 1368,
+    "full": {
+      "path": "images/optimized/a58938614797-chart.webp",
+      "width": 1149,
+      "bytes": 746944
+    }
+  }
+}

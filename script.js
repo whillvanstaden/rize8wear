@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     img.parentNode.insertBefore(trigger, img);
     trigger.append(img, hint);
     trigger.addEventListener('click', () => {
-      photo.src = img.currentSrc || img.src;
+      photo.src = img.dataset.fullSrc || img.currentSrc || img.src;
       photo.alt = img.alt;
       caption.textContent = img.closest('.product-card')?.querySelector('h4')?.textContent || img.alt;
       previousOverflow = document.body.style.overflow;
