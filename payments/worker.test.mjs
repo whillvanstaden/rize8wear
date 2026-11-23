@@ -37,9 +37,9 @@ test('only confirmed COMPLETE ITN marks paid; duplicate notifications are safe',
 test('browser return URL cannot mark a pending order paid',async()=>{const env=environment(),order=await(await checkout(env)).json();assert.equal((await worker.fetch(new Request(base+'/payment/return?order='+order.orderId+'&token='+order.token),env)).status,200);assert.equal(env._db.prepare('SELECT status FROM orders').get().status,'awaiting_payment');});
 
 test('server combines designs, derives shipping from configuration and stores free collection',async()=>{
- const env=environment(),body={...input(),items:[{productId:'men-s-i-hate-cancer-men-s',size:'M',colour:'Black',ribbon:'Yellow',quantity:1},{productId:'women-s-i-hate-cancer-women-s',size:'L',colour:'White',ribbon:'Purple',quantity:1}],delivery:{methodId:'collect-midrand',feeCents:99999},deliveryCents:1,totalCents:1};
+ const env=environment(),body={...input(),items:[{productId:'men-s-i-hate-cancer-men-s',size:'M',colour:'Black',ribbon:'Yellow',quantity:1},{productId:'women-s-i-hate-cancer-women-s',size:'L',colour:'White',ribbon:'Purple',quantity:1}],delivery:{methodId:'collect-alberton',feeCents:99999},deliveryCents:1,totalCents:1};
  const order=validateOrder(body);assert.equal(order.totalCents,50000);assert.equal(order.deliveryCents,0);assert.equal(order.lines.length,2);assert.equal(order.customer.street,undefined);
- const result=await(await checkout(env,body)).json();assert.equal(result.fields.amount,'500.00');const record=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);assert.equal(record.delivery.methodId,'collect-midrand');assert.equal(record.lines.length,2);
+ const result=await(await checkout(env,body)).json();assert.equal(result.fields.amount,'500.00');const record=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);assert.equal(record.delivery.methodId,'collect-alberton');assert.equal(record.lines.length,2);
 });
 test('courier quotes are permitted as requests but cannot become payment requests',async()=>{
  const env=environment();
@@ -55,4 +55,10 @@ test('courier quotes are permitted as requests but cannot become payment request
 test('server rejects missing method or confirmation and recalculates door delivery without trusting client fees',()=>{
  assert.throws(()=>validateOrder({...input(),delivery:null}));assert.throws(()=>validateOrder({...input(),deliveryConfirmed:false}));
  assert.equal(validateOrder({...input(),delivery:{methodId:'tcg-door',feeCents:0},deliveryCents:0}).deliveryCents,9900);
+});
+
+test('server rejects Midrand collection during its holiday closure',()=>{
+ const body={...input(),delivery:{methodId:'collect-midrand'}};
+ for(const instant of ['2026-12-14T22:00:00Z','2027-01-06T21:59:59Z'])assert.throws(()=>validateOrder(body,{now:new Date(instant)}),/reopens on 7 January/);
+ const order=validateOrder(body,{now:new Date('2027-01-06T22:00:00Z')});assert.equal(order.deliveryCents,0);assert.match(order.delivery.details.join(' '),/90 Bekker Street/);
 });

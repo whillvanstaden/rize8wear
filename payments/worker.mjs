@@ -17,9 +17,9 @@ const equal=(a,b)=>{if(typeof a!=='string'||typeof b!=='string'||a.length!==b.le
 const token=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join('');
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),n=>n.toString(16).padStart(2,'0')).join('');
 
-export function validateOrder(input,{requireConfirmation=true,forPayment=true}={}){
+export function validateOrder(input,{requireConfirmation=true,forPayment=true,now=new Date()}={}){
   const selection=input.delivery;
-  const method=globalThis.Rize8Shipping.getMethod(selection?.methodId);
+  const method=globalThis.Rize8Shipping.getMethod(selection?.methodId,now);
   const customer={};
   for(const [field,max] of Object.entries({name:120,email:254,phone:25})){
     const value=String(input.customer?.[field]||'').trim();
@@ -27,12 +27,12 @@ export function validateOrder(input,{requireConfirmation=true,forPayment=true}={
   }
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)||customer.phone.replace(/\D/g,'').length<7)throw Error('Check your email and contact number.');
   if(method.kind==='address')Object.assign(customer,globalThis.Rize8Shipping.addressFrom(input.customer));
-  const delivery=globalThis.Rize8Shipping.validateDelivery(selection,customer,{requireConfirmation,confirmed:input.deliveryConfirmed===true,forPayment});
+  const delivery=globalThis.Rize8Shipping.validateDelivery(selection,customer,{requireConfirmation,confirmed:input.deliveryConfirmed===true,forPayment,now});
   const items=Array.isArray(input.items)?input.items:[input];
   if(!items.length||items.length>50)throw Error('Add between one and 50 choices to your cart.');
   const products=new Map(Object.entries(catalogue));
   const lines=items.map((line,index)=>globalThis.Rize8Cart.normaliseLine({...line,id:'line-'+index},products));
-  const order=globalThis.Rize8Cart.calculate(lines,products,method.id),first=order.lines[0];
+  const order=globalThis.Rize8Cart.calculate(lines,products,method.id,now),first=order.lines[0];
   return {...order,delivery,customer,productId:first.productId,name:order.lines.length===1?first.product.name:order.quantity+' T-shirts',audience:first.product.audience,size:first.size,colour:first.colour,ribbon:first.ribbon,unitCents:first.unitCents};
 }
 

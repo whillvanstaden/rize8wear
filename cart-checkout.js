@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  try{const saved=JSON.parse(sessionStorage.getItem(checkoutSessionKey)||'null');if(saved&&Date.now()-saved.savedAt<86400000)for(const name of sessionFields)if(typeof saved.values?.[name]==='string')deliveryForm.elements[name].value=saved.values[name];}catch{}
  const saveCheckoutSession=()=>{try{sessionStorage.setItem(checkoutSessionKey,JSON.stringify({savedAt:Date.now(),values:Object.fromEntries(sessionFields.map(name=>[name,deliveryForm.elements[name].value]))}));}catch{}};
  try{const saved=JSON.parse(localStorage.getItem(storageKey)||'null');cart=core.restore(saved,catalogue);if(cart.length&&/^R8-[0-9]{6}-[A-F0-9]{16}$/.test(saved?.reference||''))reference=saved.reference;if(saved?.deliveryMethodId)deliveryMethodId=shipping.getMethod(saved.deliveryMethodId).id;}catch{}
- const snapshot=()=>core.calculate(cart,catalogue,deliveryMethodId);
+ const snapshot=()=>{if(deliveryMethodId&&!shipping.availability(deliveryMethodId).available){deliveryMethodId=null;reviewedOrder=null;finalConfirmation.checked=false;syncDeliveryFields();}return core.calculate(cart,catalogue,deliveryMethodId);};
  const persist=()=>{try{localStorage.setItem(storageKey,JSON.stringify({version:1,items:cart,reference,deliveryMethodId,savedAt:Date.now()}));}catch{dialog.querySelector('.cart-feedback').textContent='Your cart is available while this page remains open. Your browser could not save it for later.';}};
  const badge=()=>{const count=snapshot().quantity;document.querySelectorAll('.cart-count').forEach(el=>el.textContent=count);document.querySelectorAll('.cart-button').forEach(el=>el.setAttribute('aria-label','Shopping Cart ('+count+' '+(count===1?'item':'items')+')'));};
  const invalidateReview=()=>{revision++;reviewedOrder=null;finalConfirmation.checked=false;};
@@ -121,12 +121,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   const method=deliveryMethodId?shipping.getMethod(deliveryMethodId):null,addressFields=dialog.querySelector('.door-address-fields'),areaFields=dialog.querySelector('.quote-area-fields');
   addressFields.hidden=method?.kind!=='address';addressFields.querySelectorAll('input,select').forEach(field=>{field.disabled=addressFields.hidden;field.required=!addressFields.hidden&&field.name!=='deliveryUnit';});
   areaFields.hidden=!method?.quoteOnly;deliveryForm.elements.deliveryArea.disabled=areaFields.hidden;deliveryForm.elements.deliveryArea.required=!areaFields.hidden;
-  for(const card of dialog.querySelectorAll('.delivery-option'))card.classList.toggle('selected',card.querySelector('input').value===deliveryMethodId);
+  for(const card of dialog.querySelectorAll('.delivery-option')){const input=card.querySelector('input'),status=shipping.availability(input.value);input.disabled=!status.available;input.checked=input.value===deliveryMethodId;card.classList.toggle('selected',input.checked);card.classList.toggle('unavailable',!status.available);}
  }
  for(const method of shipping.methods){
   const card=document.createElement('div');card.className='delivery-option';const label=document.createElement('label'),radio=document.createElement('input'),copy=document.createElement('span'),name=document.createElement('strong'),fee=document.createElement('span'),description=document.createElement('small');
-  radio.type='radio';radio.name='shippingMethod';radio.value=method.id;radio.required=true;radio.checked=deliveryMethodId===method.id;radio.setAttribute('aria-label',method.label);
-  name.textContent=method.label;fee.className='delivery-fee';fee.textContent=method.quoteOnly?'QUOTE ON WHATSAPP':method.feeCents?core.money(method.feeCents):'FREE COLLECTION';description.textContent=method.description;
+  const methodAvailability=shipping.availability(method.id);
+  radio.type='radio';radio.name='shippingMethod';radio.value=method.id;radio.required=true;radio.disabled=!methodAvailability.available;radio.checked=deliveryMethodId===method.id;radio.setAttribute('aria-label',method.label);
+  name.textContent=method.label;fee.className='delivery-fee';fee.textContent=!methodAvailability.available?'TEMPORARILY UNAVAILABLE':method.quoteOnly?'QUOTE ON WHATSAPP':method.feeCents?core.money(method.feeCents):'FREE COLLECTION';description.textContent=method.description+(!methodAvailability.available?' '+methodAvailability.reason:'');
   copy.append(name,fee,description);label.append(radio,copy);card.append(label);
   if(method.officialUrl){const link=document.createElement('a');link.href=method.officialUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Visit the official '+method.courier+' website';card.append(link);}
   radio.addEventListener('change',()=>{deliveryMethodId=method.id;changed();syncDeliveryFields();drawSummary(dialog.querySelector('.checkout-summary'));});dialog.querySelector('.delivery-options').append(card);

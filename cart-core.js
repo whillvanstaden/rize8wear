@@ -30,7 +30,7 @@
   }
   return next;
  }
- function calculate(cart,catalogue,deliveryMethodId=null){
+ function calculate(cart,catalogue,deliveryMethodId=null,now=new Date()){
   const groups=new Map();
   const valid=cart.map(line=>normaliseLine(line,catalogue));
   for(const line of valid){const p=catalogue.get(line.productId);if(p.bulkPrice)groups.set(p.bulkGroup,(groups.get(p.bulkGroup)||0)+line.quantity);}
@@ -40,7 +40,7 @@
    const unitCents=Math.round((discounted?product.bulkPrice:product.price)*100);
    return {...line,product,discounted,unitCents,lineCents:unitCents*line.quantity};
   });
-  const method=lines.length&&deliveryMethodId?shipping.getMethod(deliveryMethodId):null;
+  const method=lines.length&&deliveryMethodId?shipping.getMethod(deliveryMethodId,now):null;
   const subtotalCents=lines.reduce((sum,line)=>sum+line.lineCents,0),deliveryCents=method?method.feeCents:0;
   return {lines,quantity:lines.reduce((sum,line)=>sum+line.quantity,0),subtotalCents,deliveryCents,totalCents:method?.quoteOnly?null:subtotalCents+deliveryCents,deliverySelected:!!method,paymentReady:!!method&&!method.quoteOnly,delivery:method?{methodId:method.id,label:method.label,kind:method.kind,courier:method.courier,feeCents:method.feeCents,quoteOnly:!!method.quoteOnly}:null};
  }
