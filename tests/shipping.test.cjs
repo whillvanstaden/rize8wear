@@ -39,8 +39,8 @@ test('collection records contain the exact business locations and hours',()=>{
  const midrand=shipping.validateDelivery({methodId:'collect-midrand'},contact,{confirmed:true,now:new Date('2026-11-23T12:00:00Z')});
  assert.match(midrand.details.join('\n'),/Hertford Office Park, Building F/);assert.match(midrand.details.join('\n'),/90 Bekker Street, Midrand/);assert.match(midrand.details.join('\n'),/Monday to Friday, 08:00–15:00/);
 });
-test('Midrand closure uses South African dates and includes 15 December through 6 January',()=>{
- for(const [instant,available] of [['2026-12-14T21:59:59Z',true],['2026-12-14T22:00:00Z',false],['2027-01-06T21:59:59Z',false],['2027-01-06T22:00:00Z',true]]){
+test('Midrand closure starts at noon South African time on 15 December and includes 6 January',()=>{
+ for(const [instant,available] of [['2026-12-14T21:59:59Z',true],['2026-12-14T22:00:00Z',true],['2026-12-15T09:59:59Z',true],['2026-12-15T10:00:00Z',false],['2027-01-06T21:59:59Z',false],['2027-01-06T22:00:00Z',true]]){
   const now=new Date(instant);assert.equal(shipping.availability('collect-midrand',now).available,available);
   if(available)assert.equal(shipping.getMethod('collect-midrand',now).id,'collect-midrand');else assert.throws(()=>shipping.validateDelivery({methodId:'collect-midrand'},contact,{confirmed:true,now}),/reopens on 7 January/);
   assert.equal(shipping.availability('collect-alberton',now).available,true);

@@ -59,6 +59,7 @@ test('server rejects missing method or confirmation and recalculates door delive
 
 test('server rejects Midrand collection during its holiday closure',()=>{
  const body={...input(),delivery:{methodId:'collect-midrand'}};
- for(const instant of ['2026-12-14T22:00:00Z','2027-01-06T21:59:59Z'])assert.throws(()=>validateOrder(body,{now:new Date(instant)}),/reopens on 7 January/);
+ assert.equal(validateOrder(body,{now:new Date('2026-12-15T09:59:59Z')}).deliveryCents,0);
+ for(const instant of ['2026-12-15T10:00:00Z','2027-01-06T21:59:59Z'])assert.throws(()=>validateOrder(body,{now:new Date(instant)}),/reopens on 7 January/);
  const order=validateOrder(body,{now:new Date('2027-01-06T22:00:00Z')});assert.equal(order.deliveryCents,0);assert.match(order.delivery.details.join(' '),/90 Bekker Street/);
 });
