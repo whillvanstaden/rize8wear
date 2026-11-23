@@ -50,17 +50,27 @@
   for(const raw of saved.items){try{const line=normaliseLine(raw,catalogue);if(line.id&&!lines.some(existing=>existing.id===line.id))lines.push(line);}catch{}}
   return lines;
  }
+ function paymentTest(snapshot){
+  if(!snapshot.lines.length)return snapshot;
+  if(snapshot.delivery?.quoteOnly)throw Error('Choose free collection or door delivery for this checkout test.');
+  return {...snapshot,testPayment:true,storefrontTest:true,originalTotalCents:snapshot.totalCents,testDiscountCents:snapshot.totalCents-500,totalCents:500};
+ }
  function itemText(line,index){
   return [(index+1)+'. '+line.product.audience+' '+line.product.name,'Size: '+line.size+' | Colour: '+line.colour,...(line.ribbon?['Ribbon print: '+line.ribbon]:[]),...(line.personalisation?['Surname for printing: '+line.personalisation]:[]),'Quantity: '+line.quantity+' | Unit price: '+money(line.unitCents)+(line.discounted?' (Christmas 3+ price)':''),'Item total: '+money(line.lineCents)].join('\n');
  }
- function orderText(snapshot,details,reference){
+ function regularOrderText(snapshot,details,reference){
   if(!snapshot.lines.length)throw Error('Add a T-shirt to your cart first.');
   if(!snapshot.deliverySelected||!snapshot.delivery?.details)throw Error('Choose and confirm your delivery details first.');
   const clean=key=>String(details[key]||'').trim();
   const pending=snapshot.delivery.quoteOnly;
   return ['Order reference: '+reference,'','Hello RIZE8 Wear,',pending?"I'd like a delivery quote for this combined order (not ready for payment):":"I'd like to place this combined order:",'',snapshot.lines.map(itemText).join('\n\n'),'','Items: '+snapshot.quantity,'Products subtotal: '+money(snapshot.subtotalCents),'Delivery method: '+snapshot.delivery.label,'Delivery fee (once per order): '+(pending?'TO BE CONFIRMED':snapshot.deliveryCents?money(snapshot.deliveryCents):'FREE'),pending?'FINAL TOTAL: TO BE CONFIRMED BEFORE PAYMENT':'TOTAL: '+money(snapshot.totalCents),'','Customer details:','Full name: '+clean('customerName'),'Email: '+clean('customerEmail'),'Contact number: '+clean('customerPhone'),'','Delivery / collection details:',...snapshot.delivery.details,pending?'Customer understands the fee and official collection point still require confirmation.':'Customer confirmed the selected collection point or delivery address.','',pending?'Please confirm a real participating collection point, its official identifier/address, the courier fee and the final total before requesting payment.':'Please confirm stock and payment details for the full order.'].join('\n');
  }
- const api={SIZES,RIBBONS,money,normaliseLine,upsertLine,calculate,restore,itemText,orderText};
+ function orderText(snapshot,details,reference){
+  const text=regularOrderText(snapshot,details,reference);
+  if(!snapshot.storefrontTest)return text;
+  return 'R5 LIVE CHECKOUT TEST — NO PRODUCTS OR DELIVERY WILL BE SUPPLIED\n\n'+text.replace("I'd like to place this combined order:",'Testing the normal cart and checkout with these selections:').replace('TOTAL: '+money(snapshot.totalCents),'Test adjustment: -'+money(snapshot.testDiscountCents)+'\nTEST PAYMENT TOTAL: '+money(snapshot.totalCents)).replace('Please confirm stock and payment details for the full order.','This is a real R5 payment to test checkout only.');
+ }
+ const api={SIZES,RIBBONS,money,normaliseLine,upsertLine,calculate,paymentTest,restore,itemText,orderText};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
  root.Rize8Cart=api;
 })(globalThis);

@@ -100,21 +100,25 @@ test('live checkout signs the configured merchant credentials and fails closed i
  const publicConfig=await(await worker.fetch(new Request(base+'/api/payment-config'),env)).json();assert.deepEqual(publicConfig,{enabled:true,sandbox:false});assert(!JSON.stringify(publicConfig).includes('test-live-key'));
 });
 
-test('R5 payment test requires a valid unexpired link and cannot override merchandise prices',async()=>{
- const env=environment(),testKey='cd'.repeat(32),body={testKey,customer:input().customer,totalCents:1,quantity:99,productId:'men-s-outshine-the-darkness'};
- const testCheckout=body=>worker.fetch(new Request(base+'/api/payment-test',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),env);
- assert.equal((await testCheckout(body)).status,404);
- env.PAYFAST_TEST_TOKEN_HASH=createHash('sha256').update(testKey).digest('hex');env.PAYFAST_TEST_EXPIRES=new Date(Date.now()+3600000).toISOString();
- assert.equal((await testCheckout({...body,testKey:'ef'.repeat(32)})).status,404);
- const result=await(await testCheckout(body)).json();assert.equal(result.totalCents,500);assert.equal(result.fields.amount,'5.00');assert.equal(result.fields.item_name,'RIZE8 R5 LIVE PAYMENT TEST');
- const record=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);assert.equal(record.testPayment,true);assert.equal(record.lines.length,0);assert.equal(record.deliveryCents,0);
- const retry=await(await testCheckout(body)).json();assert.equal(retry.orderId,result.orderId);assert.equal(env._db.prepare('SELECT COUNT(*) AS n FROM orders').get().n,1);
- const regular=await(await checkout(env,{...input(),testPayment:true,testKey,amount:5,totalCents:500})).json();assert.equal(regular.fields.amount,'639.00');
- const receipt=await(await worker.fetch(new Request(base+'/api/order-receipt?order='+result.orderId+'&token='+result.token),env)).json();assert.match(receipt.orderText,/No T-shirt or delivery/);assert.equal(receipt.testPayment,true);
- const page=await(await worker.fetch(new Request(base+'/payment/test?key='+testKey),env)).text();assert.match(page,/real, once-off R5.00/);assert.doesNotThrow(()=>new Script(page.match(/<script>([\s\S]*?)<\/script>/)[1]));
+test('R5 storefront test uses real selections and delivery while preserving normal prices',async()=>{
+ const env=environment(),testKey='cd'.repeat(32),body={...input(),testKey,attemptToken:'ab'.repeat(32),reference:'R8-261123-0123456789ABCDEF',items:[{productId:'men-s-i-hate-cancer-men-s',size:'M',colour:'Black',ribbon:'Yellow',quantity:1},{productId:'women-s-i-hate-cancer-women-s',size:'L',colour:'White',ribbon:'Purple',quantity:1}]};
+ const post=(path,body)=>worker.fetch(new Request(base+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),env);
+ const review=body=>post('/api/test-order-review',body),pay=body=>post('/api/test-checkout',body);
+ assert.equal((await pay(body)).status,404);env.PAYFAST_TEST_TOKEN_HASH=createHash('sha256').update(testKey).digest('hex');env.PAYFAST_TEST_EXPIRES=new Date(Date.now()+3600000).toISOString();
+ assert.equal((await pay({...body,testKey:'ef'.repeat(32)})).status,404);
+ assert.equal((await pay({...body,deliveryConfirmed:false})).status,400);
+ assert.equal((await pay({...body,customer:{...body.customer,street:''}})).status,400);
+ const checked=await(await review(body)).json();assert.equal(checked.order.totalCents,500);assert.equal(checked.order.originalTotalCents,59900);assert.equal(checked.order.testDiscountCents,59400);assert.equal(checked.order.lines.length,2);
+ assert.equal(checked.order.deliveryCents,9900);assert.equal(checked.order.customer.street,'123 Example Street');
+ const result=await(await pay({...body,totalCents:1,expectedTotalCents:500})).json();assert.equal(result.fields.amount,'5.00');assert.equal(result.fields.item_name,'RIZE8 R5 LIVE CHECKOUT TEST');
+ const stored=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);assert.equal(stored.storefrontTest,true);assert.equal(stored.lines.length,2);assert.equal(stored.lines[1].ribbon,'Purple');
+ const retry=await(await pay(body)).json();assert.equal(retry.orderId,result.orderId);
+ const edited={...body,attemptToken:'ac'.repeat(32),items:body.items.slice(0,1)};const editedResult=await(await pay(edited)).json();assert.notEqual(editedResult.orderId,result.orderId);assert.equal(editedResult.fields.amount,'5.00');
+ const regular=await(await checkout(env,{...body,testPayment:true,totalCents:500})).json();assert.equal(regular.fields.amount,'599.00');
+ const receipt=await(await worker.fetch(new Request(base+'/api/order-receipt?order='+result.orderId+'&token='+result.token),env)).json();assert.match(receipt.orderText,/Purple/);assert.match(receipt.orderText,/123 Example Street/);assert.match(receipt.orderText,/TEST PAYMENT TOTAL: R5/);assert.equal(receipt.storefrontTest,true);
+ const redirect=await worker.fetch(new Request(base+'/payment/test?key='+testKey),env);assert.equal(redirect.status,303);assert.equal(redirect.headers.get('location'),origin+'/#checkout-test='+testKey);
  const original=globalThis.fetch;try{globalThis.fetch=async()=>new Response('VALID');assert.equal((await notify(env,notification(result.orderId,{amount_gross:'5.00',amount_fee:'-1.00',amount_net:'4.00'}))).status,200);}finally{globalThis.fetch=original;}
- assert.equal(env._db.prepare('SELECT status FROM orders WHERE id=?').get(result.orderId).status,'paid');assert.equal((await testCheckout(body)).status,409);
- const paidPage=await(await worker.fetch(new Request(base+'/payment/test?key='+testKey),env)).text();assert.match(paidPage,/already confirmed/);assert(!paidPage.includes('<form id="testForm">'));
- env.PAYFAST_TEST_EXPIRES=new Date(Date.now()-1000).toISOString();assert.equal((await testCheckout(body)).status,404);assert.equal((await worker.fetch(new Request(base+'/payment/test?key='+testKey),env)).status,404);
+ assert.equal((await pay(edited)).status,409);assert.equal((await review(body)).status,409);
+ env.PAYFAST_TEST_EXPIRES=new Date(Date.now()-1000).toISOString();assert.equal((await pay(body)).status,404);assert.equal((await worker.fetch(new Request(base+'/payment/test?key='+testKey),env)).status,404);
 });
 

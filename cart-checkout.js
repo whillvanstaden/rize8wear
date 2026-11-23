@@ -1,6 +1,8 @@
 /* One editable cart across every collection. All collections use one editable PayFast checkout. */
 document.addEventListener('DOMContentLoaded',()=>{
  const core=Rize8Cart,shipping=Rize8Shipping,catalogue=new Map(),cards=[];
+ const testAccess=window.Rize8CheckoutTest||null,cartStore=testAccess?sessionStorage:localStorage;
+ if(testAccess){const banner=document.createElement('aside');banner.className='checkout-test-banner';banner.setAttribute('role','status');banner.style.cssText='background:#f6c400;color:#111;padding:14px 20px;font:700 16px/1.5 Arial;text-align:center';banner.append(document.createTextNode('R5 LIVE CHECKOUT TEST — Choose your designs and use the normal checkout. Pay R5 total. No products or delivery will be supplied. '));const exit=document.createElement('a');exit.href=location.pathname;exit.textContent='Exit test';exit.style.color='#111';banner.append(exit);document.body.prepend(banner);}
  const reviewApi=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?location.origin:paymentService;
  document.querySelectorAll('.product-card').forEach(card=>{
   const info=card.querySelector('.product-info'),name=card.querySelector('h4')?.textContent.trim();
@@ -50,20 +52,20 @@ document.addEventListener('DOMContentLoaded',()=>{
  }
  core.SIZES.forEach(value=>size.append(new Option(value,value)));
  cancerRibbonOptions.forEach(([name,cause])=>ribbon.append(new Option(name+' — '+cause,name)));
- const storageKey='rize8-cart-v1';let cart=[],reference=null,editingId=null,previousOverflow='',deliveryMethodId=null,reviewedOrder=null,reviewBusy=false,revision=0;
+ const storageKey=testAccess?'rize8-test-cart-v1':'rize8-cart-v1';let cart=[],reference=null,editingId=null,previousOverflow='',deliveryMethodId=null,reviewedOrder=null,reviewBusy=false,revision=0;
  const finalConfirmation=dialog.querySelector('#deliveryConfirmed'),payfastButton=dialog.querySelector('.payfast-confirm');
  let paymentConfig={enabled:false,sandbox:false},paymentAttempt=null;
- const attemptKey='rize8-payfast-attempt-v1';
+ const attemptKey=testAccess?'rize8-test-payfast-attempt-v1':'rize8-payfast-attempt-v1';
  try{paymentAttempt=JSON.parse(sessionStorage.getItem(attemptKey)||'null');if(!paymentAttempt||Date.now()-paymentAttempt.savedAt>86400000)paymentAttempt=null;}catch{}
  const resetPaymentAttempt=()=>{paymentAttempt=null;try{sessionStorage.removeItem(attemptKey);}catch{}};
- function syncPaymentChoice(){const quote=reviewedOrder?.delivery.quoteOnly;payfastButton.hidden=false;payfastButton.disabled=!paymentConfig.enabled||!!quote;payfastButton.textContent=paymentConfig.sandbox?'TEST PAYFAST PAYMENT':'PAY SECURELY WITH PAYFAST';dialog.querySelector('.payfast-availability').textContent=quote?'Arrange a confirmed delivery option before payment.':paymentConfig.enabled?'Secure payment for the full order total shown above.':'PayFast is temporarily unavailable. Your cart is saved. Please try again shortly or contact us for assistance.';}
+ function syncPaymentChoice(){const quote=reviewedOrder?.delivery.quoteOnly;payfastButton.hidden=false;payfastButton.disabled=!paymentConfig.enabled||!!quote;payfastButton.textContent=testAccess?'PAY R5.00 WITH PAYFAST':paymentConfig.sandbox?'TEST PAYFAST PAYMENT':'PAY SECURELY WITH PAYFAST';dialog.querySelector('.payfast-availability').textContent=quote?'Arrange a confirmed delivery option before payment.':paymentConfig.enabled?'Secure payment for the full order total shown above.':'PayFast is temporarily unavailable. Your cart is saved. Please try again shortly or contact us for assistance.';}
  fetch(reviewApi+'/api/payment-config',{signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():{}).then(config=>{paymentConfig=config;syncPaymentChoice();}).catch(()=>syncPaymentChoice());
- const checkoutSessionKey='rize8-checkout-session-v1',sessionFields=['customerName','customerEmail','customerPhone','deliveryArea','deliveryStreet','deliveryUnit','deliverySuburb','deliveryCity','deliveryProvince','deliveryPostalCode'];
+ const checkoutSessionKey=testAccess?'rize8-test-checkout-session-v1':'rize8-checkout-session-v1',sessionFields=['customerName','customerEmail','customerPhone','deliveryArea','deliveryStreet','deliveryUnit','deliverySuburb','deliveryCity','deliveryProvince','deliveryPostalCode'];
  try{const saved=JSON.parse(sessionStorage.getItem(checkoutSessionKey)||'null');if(saved&&Date.now()-saved.savedAt<86400000)for(const name of sessionFields)if(typeof saved.values?.[name]==='string')deliveryForm.elements[name].value=saved.values[name];}catch{}
  const saveCheckoutSession=()=>{try{sessionStorage.setItem(checkoutSessionKey,JSON.stringify({savedAt:Date.now(),values:Object.fromEntries(sessionFields.map(name=>[name,deliveryForm.elements[name].value]))}));}catch{}};
- try{const saved=JSON.parse(localStorage.getItem(storageKey)||'null');cart=core.restore(saved,catalogue);if(cart.length&&/^R8-[0-9]{6}-[A-F0-9]{16}$/.test(saved?.reference||''))reference=saved.reference;if(saved?.deliveryMethodId&&!shipping.getMethod(saved.deliveryMethodId).quoteOnly)deliveryMethodId=shipping.getMethod(saved.deliveryMethodId).id;}catch{}
- const snapshot=()=>{if(deliveryMethodId&&!shipping.availability(deliveryMethodId).available){deliveryMethodId=null;reviewedOrder=null;finalConfirmation.checked=false;syncDeliveryFields();}return core.calculate(cart,catalogue,deliveryMethodId);};
- const persist=()=>{try{localStorage.setItem(storageKey,JSON.stringify({version:1,items:cart,reference,deliveryMethodId,savedAt:Date.now()}));}catch{dialog.querySelector('.cart-feedback').textContent='Your cart is available while this page remains open. Your browser could not save it for later.';}};
+ try{const saved=JSON.parse(cartStore.getItem(storageKey)||'null');cart=core.restore(saved,catalogue);if(cart.length&&/^R8-[0-9]{6}-[A-F0-9]{16}$/.test(saved?.reference||''))reference=saved.reference;if(saved?.deliveryMethodId&&!shipping.getMethod(saved.deliveryMethodId).quoteOnly)deliveryMethodId=shipping.getMethod(saved.deliveryMethodId).id;}catch{}
+ const snapshot=()=>{if(deliveryMethodId&&!shipping.availability(deliveryMethodId).available){deliveryMethodId=null;reviewedOrder=null;finalConfirmation.checked=false;syncDeliveryFields();}const order=core.calculate(cart,catalogue,deliveryMethodId);return testAccess?core.paymentTest(order):order;};
+ const persist=()=>{try{cartStore.setItem(storageKey,JSON.stringify({version:1,items:cart,reference,deliveryMethodId,savedAt:Date.now()}));}catch{dialog.querySelector('.cart-feedback').textContent='Your cart is available while this page remains open. Your browser could not save it for later.';}};
  const badge=()=>{const count=snapshot().quantity;document.querySelectorAll('.cart-count').forEach(el=>el.textContent=count);document.querySelectorAll('.cart-button').forEach(el=>el.setAttribute('aria-label','Shopping Cart ('+count+' '+(count===1?'item':'items')+')'));};
  const invalidateReview=()=>{revision++;reviewedOrder=null;finalConfirmation.checked=false;resetPaymentAttempt();};
  const changed=()=>{invalidateReview();if(!cart.length)reference=null;persist();badge();};
@@ -71,7 +73,11 @@ document.addEventListener('DOMContentLoaded',()=>{
  function totalsElement(order){
   const box=document.createElement('div');box.className='cart-total-box';
   const pending=order.delivery?.quoteOnly;
-  for(const [label,value] of [['Products subtotal',core.money(order.subtotalCents)],['Delivery',!order.deliverySelected?'Choose at checkout':pending?'To be confirmed':order.deliveryCents?core.money(order.deliveryCents):'FREE'],[!order.deliverySelected?'Before delivery':pending?'Final total':'Total',pending?'To be confirmed':core.money(order.totalCents)]]){const row=document.createElement('p'),name=document.createElement('span'),price=document.createElement('strong');name.textContent=label;price.textContent=value;row.append(name,price);box.append(row);}
+  const rows=[['Products subtotal',core.money(order.subtotalCents)],['Delivery',!order.deliverySelected?'Choose at checkout':pending?'To be confirmed':order.deliveryCents?core.money(order.deliveryCents):'FREE']];
+  if(order.storefrontTest)rows.push(['Private test adjustment','−'+core.money(order.testDiscountCents)]);
+  rows.push([order.storefrontTest?'TEST PAYMENT TOTAL':!order.deliverySelected?'Before delivery':pending?'Final total':'Total',pending?'To be confirmed':core.money(order.totalCents)]);
+  for(const [label,value] of rows){const row=document.createElement('p'),name=document.createElement('span'),price=document.createElement('strong');name.textContent=label;price.textContent=value;row.append(name,price);box.append(row);}
+  if(order.storefrontTest){const note=document.createElement('p');note.textContent='R5 payment test only. No merchandise or delivery will be supplied.';box.append(note);}
   return box;
  }
  function drawSummary(target){const order=snapshot();target.replaceChildren();for(const line of order.lines){const p=document.createElement('p');p.className='checkout-line';p.textContent=line.quantity+' × '+line.product.audience+' '+line.product.name+' · '+line.size+' · '+line.colour+(line.ribbon?' · '+line.ribbon+' ribbon':'')+(line.personalisation?' · '+line.personalisation:'')+' — '+core.money(line.lineCents);target.append(p);}target.append(totalsElement(order));}
@@ -149,10 +155,10 @@ document.addEventListener('DOMContentLoaded',()=>{
  const contactDetails=order=>({customerName:order.customer.name,customerEmail:order.customer.email,customerPhone:order.customer.phone});
  function orderPayload(requireConfirmation=false){
   const fields=Object.fromEntries(new FormData(deliveryForm)),customer={name:fields.customerName,email:fields.customerEmail,phone:fields.customerPhone,street:fields.deliveryStreet,unit:fields.deliveryUnit,suburb:fields.deliverySuburb,city:fields.deliveryCity,province:fields.deliveryProvince,postalCode:fields.deliveryPostalCode};
-  return {items:cart,reference,delivery:{methodId:deliveryMethodId,area:fields.deliveryArea||''},deliveryConfirmed:finalConfirmation.checked,requireConfirmation,customer};
+  return {items:cart,reference,...(testAccess?{testKey:testAccess.key}:{}),delivery:{methodId:deliveryMethodId,area:fields.deliveryArea||''},deliveryConfirmed:finalConfirmation.checked,requireConfirmation,customer};
  }
  async function requestReview(requireConfirmation=false){
-  const response=await fetch(reviewApi+'/api/order-review',{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(20000),body:JSON.stringify(orderPayload(requireConfirmation))});
+  const response=await fetch(reviewApi+(testAccess?'/api/test-order-review':'/api/order-review'),{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(20000),body:JSON.stringify(orderPayload(requireConfirmation))});
   const result=await response.json();if(!response.ok||!result.order)throw Error(result.error||'Unable to check this order. Please try again.');return result.order;
  }
  function displayReview(order){
@@ -176,10 +182,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     const payload=orderPayload(true),fingerprint=JSON.stringify({...payload,requireConfirmation:true});
     if(!paymentAttempt||paymentAttempt.fingerprint!==fingerprint){paymentAttempt={fingerprint,token:Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join(''),savedAt:Date.now()};try{sessionStorage.setItem(attemptKey,JSON.stringify(paymentAttempt));}catch{}}
     notice.textContent='Preparing your secure PayFast payment…';
-    const response=await fetch(reviewApi+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(20000),body:JSON.stringify({...payload,attemptToken:paymentAttempt.token,expectedTotalCents:order.totalCents})});
+    const response=await fetch(reviewApi+(testAccess?'/api/test-checkout':'/api/checkout'),{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(20000),body:JSON.stringify({...payload,attemptToken:paymentAttempt.token,expectedTotalCents:order.totalCents})});
     const result=await response.json();if(!response.ok)throw Error(result.error||'PayFast could not start. Your cart is saved; please try again shortly.');
     if(!dialog.open||revision!==requestRevision)return;
     if(!['https://www.payfast.co.za/eng/process','https://sandbox.payfast.co.za/eng/process'].includes(result.action)||result.totalCents!==order.totalCents||result.fields?.amount!==(order.totalCents/100).toFixed(2))throw Error('Payment details changed. Please review your order again.');
+    paymentAttempt.statusToken=result.token;sessionStorage.setItem(attemptKey,JSON.stringify(paymentAttempt));
     const form=document.createElement('form');form.method='POST';form.action=result.action;
     for(const [name,value] of Object.entries(result.fields)){const input=document.createElement('input');input.type='hidden';input.name=name;input.value=String(value);form.append(input);}
     document.body.append(form);persist();saveCheckoutSession();notice.textContent='Opening secure PayFast checkout. Your cart is saved if you return.';form.submit();return;
@@ -194,8 +201,8 @@ document.addEventListener('DOMContentLoaded',()=>{
  const returnParams=new URLSearchParams(location.search);
  if(returnParams.has('resume_order'))openCart();
  if(returnParams.has('payment_return')){
-  const orderId=returnParams.get('order'),secret=paymentAttempt?.token;
-  if(paymentAttempt?.token===secret)fetch(reviewApi+'/api/order-status?order='+encodeURIComponent(orderId)+'&token='+encodeURIComponent(secret),{signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).then(result=>{if(result?.status==='paid'){const expected=JSON.parse(paymentAttempt.fingerprint);if(JSON.stringify(cart)===JSON.stringify(expected.items)&&reference===expected.reference){cart=[];reference=null;}resetPaymentAttempt();persist();badge();dialog.querySelector('.cart-feedback').textContent='Your payment is confirmed. Thank you!';}else openCart();}).catch(()=>openCart());
+  const orderId=returnParams.get('order'),secret=paymentAttempt?.statusToken||paymentAttempt?.token;
+  if(secret)fetch(reviewApi+'/api/order-status?order='+encodeURIComponent(orderId)+'&token='+encodeURIComponent(secret),{signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).then(result=>{if(result?.status==='paid'){const expected=JSON.parse(paymentAttempt.fingerprint);if(JSON.stringify(cart)===JSON.stringify(expected.items)&&reference===expected.reference){cart=[];reference=null;}resetPaymentAttempt();persist();badge();dialog.querySelector('.cart-feedback').textContent='Your payment is confirmed. Thank you!';}else openCart();}).catch(()=>openCart());
   history.replaceState(null,'',location.pathname+location.hash);
  }
 });
