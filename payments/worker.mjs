@@ -28,13 +28,14 @@ export function validateOrder(input,{requireConfirmation=true,forPayment=true,no
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)||customer.phone.replace(/\D/g,'').length<7)throw Error('Check your email and contact number.');
   if(method.kind==='address')Object.assign(customer,globalThis.Rize8Shipping.addressFrom(input.customer));
   const delivery=globalThis.Rize8Shipping.validateDelivery(selection,customer,{requireConfirmation,confirmed:input.deliveryConfirmed===true,forPayment,now});
+  if(forPayment&&input.shippingTermsAccepted!==true)throw Error('Please read and acknowledge the Shipping & Delivery Policy and Terms & Conditions before payment.');
   const items=Array.isArray(input.items)?input.items:[input];
   if(!items.length||items.length>50)throw Error('Add between one and 50 choices to your cart.');
   const products=new Map(Object.entries(catalogue));
   const lines=items.map((line,index)=>globalThis.Rize8Cart.normaliseLine({...line,id:'line-'+index},products));
   const order=globalThis.Rize8Cart.calculate(lines,products,method.id,now),first=order.lines[0];
   const reference=/^R8-[0-9]{6}-[A-F0-9]{16}$/.test(input.reference||'')?input.reference:null;
-  return {...order,reference,delivery,customer,productId:first.productId,name:order.lines.length===1?first.product.name:order.quantity+' T-shirts',audience:first.product.audience,size:first.size,colour:first.colour,ribbon:first.ribbon,unitCents:first.unitCents};
+  return {...order,reference,delivery,customer,shippingTermsAccepted:input.shippingTermsAccepted===true,shippingTermsVersion:input.shippingTermsAccepted===true?'2026-11-23':null,productId:first.productId,name:order.lines.length===1?first.product.name:order.quantity+' T-shirts',audience:first.product.audience,size:first.size,colour:first.colour,ribbon:first.ribbon,unitCents:first.unitCents};
 }
 
 async function orderReview(request,env,testOnly=false){

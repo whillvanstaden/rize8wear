@@ -32,6 +32,14 @@ document.addEventListener('DOMContentLoaded',()=>{
  <label for="customerEmail">Email address *</label><input id="customerEmail" name="customerEmail" type="email" autocomplete="email" required maxlength="254">
  <label for="customerPhone">Contact number *</label><input id="customerPhone" name="customerPhone" type="tel" autocomplete="tel" required minlength="7" maxlength="25" pattern="[+0-9() .-]{7,25}" title="Enter your contact number, including area or country code.">
  <fieldset class="delivery-methods"><legend>Choose Your Delivery Method</legend><div class="delivery-options"></div></fieldset>
+ <section class="checkout-delivery-terms" aria-labelledby="deliveryTermsHeading"><h3 id="deliveryTermsHeading">Before you order: delivery terms</h3>
+ <ul><li><strong>Door-to-door delivery is R99 per order.</strong> Collection at Kritzinger Road or Midrand is free; please check the addresses, hours and Midrand holiday closure above.</li>
+ <li>Processing begins within <strong>48 hours of cleared payment</strong>. Proof of payment alone does not confirm payment.</li>
+ <li>Once processing begins, allow up to <strong>3 working days for preparation and dispatch</strong>. Working days exclude weekends and South African public holidays.</li>
+ <li>Delivery timeframes are estimates confirmed for your selected service. Courier delays, remote locations and peak periods may affect arrival.</li>
+ <li>Check your address, contact number and postal code carefully. Incorrect details may delay delivery or cause additional courier charges where legally permitted.</li></ul>
+ <p><a href="shipping.html" target="_blank" rel="noopener noreferrer">Read the full Shipping &amp; Delivery Policy</a> · <a href="terms.html" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a></p>
+ <label class="shipping-terms-confirmation" for="shippingTermsAccepted"><input id="shippingTermsAccepted" name="shippingTermsAccepted" type="checkbox" required><span>I have read and understand the Shipping &amp; Delivery Policy and Terms &amp; Conditions. *</span></label></section>
  <div class="quote-area-fields" hidden><label for="deliveryArea">Preferred suburb, city or postal code *</label><input id="deliveryArea" name="deliveryArea" maxlength="120" disabled><p class="order-help">This area helps us find a suitable official collection point. It is not a selected or verified pickup point.</p></div>
  <div class="door-address-fields" hidden>
  <label for="deliveryStreet">Street address *</label><input id="deliveryStreet" name="deliveryStreet" autocomplete="address-line1" placeholder="House number and street name" required maxlength="200" pattern=".*\\S.*">
@@ -66,7 +74,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  try{const saved=JSON.parse(cartStore.getItem(storageKey)||'null');cart=core.restore(saved,catalogue);if(cart.length&&/^R8-[0-9]{6}-[A-F0-9]{16}$/.test(saved?.reference||''))reference=saved.reference;if(saved?.deliveryMethodId&&!shipping.getMethod(saved.deliveryMethodId).quoteOnly)deliveryMethodId=shipping.getMethod(saved.deliveryMethodId).id;}catch{}
  const snapshot=()=>{if(deliveryMethodId&&!shipping.availability(deliveryMethodId).available){deliveryMethodId=null;reviewedOrder=null;finalConfirmation.checked=false;syncDeliveryFields();}const order=core.calculate(cart,catalogue,deliveryMethodId);return testAccess?core.paymentTest(order):order;};
  const persist=()=>{try{cartStore.setItem(storageKey,JSON.stringify({version:1,items:cart,reference,deliveryMethodId,savedAt:Date.now()}));}catch{dialog.querySelector('.cart-feedback').textContent='Your cart is available while this page remains open. Your browser could not save it for later.';}};
- const badge=()=>{const count=snapshot().quantity;document.querySelectorAll('.cart-count').forEach(el=>el.textContent=count);document.querySelectorAll('.cart-button').forEach(el=>el.setAttribute('aria-label','Shopping Cart ('+count+' '+(count===1?'item':'items')+')'));};
+ const badge=()=>{const count=snapshot().quantity;document.querySelectorAll('.cart-count').forEach(el=>{el.textContent=count;el.hidden=count===0;});document.querySelectorAll('.cart-button').forEach(el=>el.setAttribute('aria-label','Shopping Cart ('+count+' '+(count===1?'item':'items')+')'));};
  const invalidateReview=()=>{revision++;reviewedOrder=null;finalConfirmation.checked=false;resetPaymentAttempt();};
  const changed=()=>{invalidateReview();if(!cart.length)reference=null;persist();badge();};
  const show=(view,title)=>{dialog.querySelector('.cart-feedback').textContent='';dialog.querySelectorAll('[data-cart-view]').forEach(section=>section.hidden=section.dataset.cartView!==view);dialog.querySelector('#cartDialogTitle').textContent=title;if(!dialog.open){previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';dialog.showModal();}dialog.scrollTop=0;dialog.querySelector('#cartDialogTitle').focus();};
@@ -142,7 +150,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   name.textContent=method.label;fee.className='delivery-fee';fee.textContent=!methodAvailability.available?'TEMPORARILY UNAVAILABLE':method.quoteOnly?'ARRANGE BEFORE CHECKOUT':method.feeCents?core.money(method.feeCents):'FREE COLLECTION';description.textContent=(method.quoteOnly?'Contact RIZE8 Wear to arrange this courier first. Online checkout requires a confirmed delivery fee and location.':method.description)+(!methodAvailability.available?' '+methodAvailability.reason:'');
   copy.append(name,fee,description);label.append(radio,copy);card.append(label);
   if(method.officialUrl){const link=document.createElement('a');link.href=method.officialUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Visit the official '+method.courier+' website';card.append(link);}
-  radio.addEventListener('change',()=>{deliveryMethodId=method.id;changed();syncDeliveryFields();drawSummary(dialog.querySelector('.checkout-summary'));});dialog.querySelector('.delivery-options').append(card);
+  radio.addEventListener('change',()=>{deliveryMethodId=method.id;deliveryForm.elements.shippingTermsAccepted.checked=false;changed();syncDeliveryFields();drawSummary(dialog.querySelector('.checkout-summary'));});dialog.querySelector('.delivery-options').append(card);
  }
  syncDeliveryFields();deliveryForm.addEventListener('input',()=>{invalidateReview();saveCheckoutSession();});deliveryForm.addEventListener('change',()=>{invalidateReview();saveCheckoutSession();});
  dialog.querySelector('.cart-checkout').addEventListener('click',()=>{for(const input of dialog.querySelectorAll('.cart-items input'))if(!input.reportValidity())return;openDelivery();});
@@ -155,7 +163,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const contactDetails=order=>({customerName:order.customer.name,customerEmail:order.customer.email,customerPhone:order.customer.phone});
  function orderPayload(requireConfirmation=false){
   const fields=Object.fromEntries(new FormData(deliveryForm)),customer={name:fields.customerName,email:fields.customerEmail,phone:fields.customerPhone,street:fields.deliveryStreet,unit:fields.deliveryUnit,suburb:fields.deliverySuburb,city:fields.deliveryCity,province:fields.deliveryProvince,postalCode:fields.deliveryPostalCode};
-  return {items:cart,reference,...(testAccess?{testKey:testAccess.key}:{}),delivery:{methodId:deliveryMethodId,area:fields.deliveryArea||''},deliveryConfirmed:finalConfirmation.checked,requireConfirmation,customer};
+  return {items:cart,reference,...(testAccess?{testKey:testAccess.key}:{}),delivery:{methodId:deliveryMethodId,area:fields.deliveryArea||''},shippingTermsAccepted:deliveryForm.elements.shippingTermsAccepted.checked,deliveryConfirmed:finalConfirmation.checked,requireConfirmation,customer};
  }
  async function requestReview(requireConfirmation=false){
   const response=await fetch(reviewApi+(testAccess?'/api/test-order-review':'/api/order-review'),{method:'POST',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(20000),body:JSON.stringify(orderPayload(requireConfirmation))});
