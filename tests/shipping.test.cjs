@@ -12,12 +12,12 @@ test('Alberton and Midrand collection are free and do not require or leak an add
   assert.equal(order.deliveryCents,0);assert.equal(order.totalCents,quantity*25000);assert.equal(delivery.address,null);assert(!delivery.details.join(' ').includes(address.street));assert.equal(delivery.kind,'collection');
  }
 });
-test('each courier quote leaves shipping and the final payable total unknown',()=>{
+test('checkout offers only the two free collections and R99 door delivery; retired couriers are rejected',()=>{
+ assert.deepEqual(shipping.methods.map(method=>method.id),['collect-alberton','collect-midrand','tcg-door']);
  for(const methodId of ['pudo-locker','paxi','pargo']){
-  const order=cart.calculate(items(1),products,methodId);order.delivery=shipping.validateDelivery({methodId,area:'Germiston 1410'},contact,{confirmed:true,forPayment:false});
-  assert.equal(order.deliveryCents,null);assert.equal(order.totalCents,null);assert.equal(order.paymentReady,false);assert.equal(order.delivery.pickupPoint,null);
-  const message=cart.orderText(order,{customerName:contact.name,customerEmail:contact.email,customerPhone:contact.phone},'R8-TEST');assert.match(message,/FINAL TOTAL: TO BE CONFIRMED BEFORE PAYMENT/);assert.match(message,/not yet selected or verified/);assert(!message.includes('Delivery fee (once per order): FREE'));
-  assert.throws(()=>shipping.validateDelivery({methodId,area:'Germiston'},contact,{confirmed:true,forPayment:true}),/before payment/);
+  assert.equal(shipping.availability(methodId).available,false);
+  assert.throws(()=>cart.calculate(items(1),products,methodId),/available delivery method/);
+  assert.throws(()=>shipping.validateDelivery({methodId,area:'Germiston 1410'},contact,{confirmed:true,forPayment:true}),/available delivery method/);
  }
 });
 test('multiple shirts incur one fixed door delivery fee and switching to free removes it',()=>{

@@ -49,11 +49,11 @@ test('server combines designs, derives shipping from configuration and stores fr
  const order=validateOrder(body);assert.equal(order.totalCents,50000);assert.equal(order.deliveryCents,0);assert.equal(order.lines.length,2);assert.equal(order.customer.street,undefined);
  const result=await(await checkout(env,body)).json();assert.equal(result.fields.amount,'500.00');const record=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);assert.equal(record.delivery.methodId,'collect-alberton');assert.equal(record.lines.length,2);
 });
-test('courier quotes are permitted as requests but cannot become payment requests',async()=>{
+test('retired couriers cannot create a review or payment request',async()=>{
  const env=environment();
  for(const methodId of ['pudo-locker','paxi','pargo']){
   const body={...input(),delivery:{methodId,area:'Germiston 1410'},requireConfirmation:true};
-  const review=await worker.fetch(new Request(base+'/api/order-review',{method:'POST',headers:{Origin:origin,'content-type':'application/json'},body:JSON.stringify(body)}),env);assert.equal(review.status,200);const {order}=await review.json();assert.equal(order.totalCents,null);assert.equal(order.delivery.pickupPoint,null);
+  const review=await worker.fetch(new Request(base+'/api/order-review',{method:'POST',headers:{Origin:origin,'content-type':'application/json'},body:JSON.stringify(body)}),env);assert.equal(review.status,400);assert.match((await review.json()).error,/available delivery method/);
   assert.equal((await checkout(env,body)).status,400);
   assert.equal((await worker.fetch(new Request(base+'/api/order-review',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...body,delivery:{...body.delivery,pointId:'made-up'}})}),env)).status,400);
  }
