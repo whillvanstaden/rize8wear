@@ -1,4 +1,5 @@
 import {md5} from './md5.mjs';
+import {reportMetaPurchase} from './meta-purchase.mjs';
 import {catalogue} from './catalogue.mjs';
 import '../shipping-config.js';
 import '../cart-core.js';
@@ -76,7 +77,7 @@ async function validTestKey(key,env){
 }
 async function testAlreadyPaid(env){return !!(env.DB&&await env.DB.prepare("SELECT id FROM orders WHERE status = 'paid' AND json_extract(details_json, '$.testKeyHash') = ? LIMIT 1").bind(env.PAYFAST_TEST_TOKEN_HASH).first());}
 
-async function checkout(request,env,testOnly=false){
+async function checkout(request,env,testOnly=false,pathPrefix=''){
   if(env.PAYFAST_ENABLED!=='true')return json({error:'Online payments are not active yet. Please contact RIZE8 Wear.'},503);
   const cfg=config(env);
   if(!env.DB||!cfg.merchantId||!cfg.merchantKey)return json({error:'Payment setup is incomplete.'},503);
@@ -92,9 +93,10 @@ async function checkout(request,env,testOnly=false){
   }
   let order;try{order=testOnly?{...globalThis.Rize8Cart.paymentTest(validateOrder(input)),name:'R5 LIVE CHECKOUT TEST',testKeyHash:env.PAYFAST_TEST_TOKEN_HASH}:validateOrder(input);}catch(error){return json({error:error.message},400);}
   if(input.expectedTotalCents!==undefined&&input.expectedTotalCents!==order.totalCents)return json({error:'Prices or delivery changed. Please review your order again before payment.'},409);
+  order.metaTracking={clientUserAgent:String(request.headers.get('User-Agent')||'').slice(0,1024)};
   const secret=input.attemptToken===undefined?token():input.attemptToken;
   if(!/^[a-f0-9]{64}$/.test(secret))return json({error:'Invalid payment attempt. Please review your order again.'},400);
-  const id='R8-PF-'+(await hash(secret)).slice(0,32),now=Date.now(),base=new URL(request.url).origin;
+  const id='R8-PF-'+(await hash(secret)).slice(0,32),now=Date.now(),base=new URL(request.url).origin+pathPrefix;
   const existing=await env.DB.prepare('SELECT status, mode, details_json, created_at FROM orders WHERE id = ?').bind(id).first();
   if(existing&&(existing.status==='paid'||existing.mode!==(cfg.sandbox?'sandbox':'live')||existing.details_json!==JSON.stringify(order)||now-existing.created_at>86400000))return json({error:existing.status==='paid'?'This order has already been paid. Please do not pay again.':'This payment attempt no longer matches your order. Review your cart again.'},409);
   const ipHash=await hash(request.headers.get('CF-Connecting-IP')||'unknown');
@@ -102,7 +104,7 @@ async function checkout(request,env,testOnly=false){
   if(!existing&&recent?.count>=15)return json({error:'Too many payment attempts. Please try again later, or order via WhatsApp.'},429);
   const pairs=[['merchant_id',cfg.merchantId],['merchant_key',cfg.merchantKey],['return_url',base+'/payment/return?order='+id+'&token='+secret],['cancel_url',base+'/payment/cancel?order='+id+'&token='+secret+(testOnly?'&checkout_test=1':'')],['notify_url',base+'/api/payfast/notify'],['name_first',order.customer.name.split(' ')[0]],['name_last',order.customer.name.split(' ').slice(1).join(' ')],['email_address',order.customer.email],['cell_number',order.customer.phone],['m_payment_id',id],['amount',money(order.totalCents)],['item_name',('RIZE8 '+order.name).slice(0,100)],['item_description',(order.quantity+' shirts; '+order.delivery.label+'; delivery '+money(order.deliveryCents)).slice(0,255)],['custom_str1',order.customer.name],['custom_str2',(order.delivery.kind==='collection'?order.delivery.label:[order.customer.street,order.customer.unit].filter(Boolean).join(', ')).slice(0,255)],['custom_str3',(order.delivery.kind==='collection'?'Collection arrangements after confirmation':[order.customer.suburb,order.customer.city,order.customer.province,order.customer.postalCode].filter(Boolean).join(', ')).slice(0,255)],['custom_str4',order.customer.phone],['email_confirmation','1'],['confirmation_address','sales@rize8wear.co.za']];
   // Keep the same customer reference in PayFast and WhatsApp.
-  const receiptUrl=base+'/r/'+id+'/'+secret;
+  const receiptUrl=new URL(request.url).origin+'/r/'+id+'/'+secret;
   if(!testOnly)pairs.find(([key])=>key==='item_description')[1]=[(order.reference||id),order.quantity+' shirts',order.delivery.courier+' '+money(order.deliveryCents),'Full order: '+receiptUrl].join(' | ');
   if(testOnly)pairs.find(([key])=>key==='item_description')[1]='R5 live integration test only. No T-shirt, shipping or subscription.';
   pairs.find(([key])=>key==='custom_str2')[1]=receiptUrl;
@@ -127,9 +129,14 @@ async function notify(request,env){
   if(!confirmation.ok||(await confirmation.text()).trim()!=='VALID')return new Response('Payment unconfirmed',{status:400});
   if(params.get('payment_status')!=='COMPLETE')return new Response('OK');
   const paymentId=params.get('pf_payment_id');if(!/^\d+$/.test(paymentId||''))return new Response('Invalid payment',{status:400});
-  if(order.status==='paid')return new Response(order.pf_payment_id===paymentId?'OK':'Payment mismatch',{status:order.pf_payment_id===paymentId?200:409});
-  await env.DB.prepare("UPDATE orders SET status = 'paid', pf_payment_id = ?, paid_at = ? WHERE id = ? AND status = 'awaiting_payment'").bind(paymentId,Date.now(),id).run();
-  return new Response('OK');
+  if(order.status==='paid'&&order.pf_payment_id!==paymentId)return new Response('Payment mismatch',{status:409});
+  if(order.status!=='paid')await env.DB.prepare("UPDATE orders SET status = 'paid', pf_payment_id = ?, paid_at = ? WHERE id = ? AND status = 'awaiting_payment'").bind(paymentId,Date.now(),id).run();
+  const paid=await env.DB.prepare('SELECT pf_payment_id FROM orders WHERE id = ?').bind(id).first();
+  if(paid?.pf_payment_id!==paymentId)return new Response('Payment mismatch',{status:409});
+  // A tracking failure never reverses payment. A non-200 ITN response asks PayFast
+  // to retry notification; paid retries recover the same persistent event record.
+  let reported=false;try{reported=await reportMetaPurchase(id,env);}catch{}
+  return new Response(reported?'OK':'Payment recorded; tracking notification retry required',{status:reported?200:503});
 }
 
 async function status(request,env,receipt=false){
@@ -150,6 +157,36 @@ async function paymentTestPage(request,env){
  return new Response(null,{status:303,headers:{location:SHOP+'/#checkout-test='+key,'cache-control':'no-store','referrer-policy':'no-referrer','x-robots-tag':'noindex, nofollow'}});
 }
 
+// The private Sandbox namespace never changes the customer-facing PayFast mode.
+// It can only create sandbox orders and can only report them to Meta Test Events.
+function sandboxEnvironment(env){return {...env,PAYFAST_ENABLED:'true',PAYFAST_MODE:'sandbox',META_CAPI_ENABLED:'true',META_CAPI_MODE:'test',META_TEST_EVENT_CODE:env.META_SANDBOX_TEST_EVENT_CODE};}
+async function sandboxRoute(request,env){
+ const path=new URL(request.url).pathname,origin=request.headers.get('Origin');
+ if(env.PAYFAST_SANDBOX_ENABLED!=='true')return new Response('Not found',{status:404});
+ if(origin&&!ORIGINS.has(origin))return json({error:'Origin not allowed.'},403);
+ const sandboxEnv=sandboxEnvironment(env);
+ if(path==='/sandbox/api/payfast/notify'&&request.method==='POST')return notify(request,sandboxEnv);
+ if((path==='/sandbox/payment/return'||path==='/sandbox/payment/cancel')&&request.method==='GET')return paymentReturn(request);
+ if(path==='/sandbox/api/checkout'&&request.method==='POST'){
+  let input;try{const raw=await request.text();if(raw.length>64000)throw Error();input=JSON.parse(raw);}catch{return json({error:'Invalid order.'},400);}
+  const keyEnv={PAYFAST_TEST_TOKEN_HASH:env.PAYFAST_SANDBOX_TOKEN_HASH,PAYFAST_TEST_EXPIRES:env.PAYFAST_SANDBOX_EXPIRES};
+  if(!await validTestKey(input.testKey,keyEnv))return json({error:'This private Sandbox test link has expired.'},404);
+  if(!/^TEST\w{1,100}$/.test(env.META_SANDBOX_TEST_EVENT_CODE||'')||!env.META_ACCESS_TOKEN)return json({error:'Sandbox Meta Test Events setup is incomplete.'},503);
+  if(!/^[a-f0-9]{64}$/.test(input.attemptToken||''))return json({error:'Invalid Sandbox payment attempt.'},400);
+  input.attemptToken=await hash('sandbox:'+input.testKey+':'+input.attemptToken);
+  return checkout(new Request(request,{body:JSON.stringify(input)}),sandboxEnv,false,'/sandbox');
+ }
+ if(path==='/sandbox/'&&request.method==='GET')return sandboxPage();
+ return new Response('Not found',{status:404});
+}
+function sandboxPage(){
+ const page=`<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>RIZE8 Sandbox payment test</title>
+<style>body{font:18px/1.6 Arial;max-width:650px;margin:40px auto;padding:24px;background:#111;color:#fff}button{font:inherit;padding:15px;border:0;background:#ffca05;color:#111;cursor:pointer}button:disabled{opacity:.5}strong{color:#ffca05}</style>
+<h1>PayFast Sandbox test</h1><p><strong>No real payment. No products will be supplied.</strong></p><p>Test order: one men's and one women's Cancer Awareness T-shirt, size M, black, yellow ribbon. T-shirts R500 + test door delivery R99 = <strong>R599.00 ZAR</strong>.</p><p>This tests verified PayFast payment confirmation and one server Purchase in Meta Test Events. Customer details are fictional.</p><button id="pay">Continue to PayFast Sandbox</button><p id="message" role="status"></p>
+<script>const testKey=new URLSearchParams(location.hash.slice(1)).get('key');const button=document.getElementById('pay');if(!/^[a-f0-9]{64}$/.test(testKey||'')){button.disabled=true;document.getElementById('message').textContent='Open the current private test link.';}button.onclick=async()=>{button.disabled=true;try{let attempt=sessionStorage.getItem('rize8-sandbox-attempt');if(!attempt){attempt=Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join('');sessionStorage.setItem('rize8-sandbox-attempt',attempt);}const input={testKey,attemptToken:attempt,expectedTotalCents:59900,items:[{productId:'men-s-i-hate-cancer-men-s',size:'M',colour:'Black',ribbon:'Yellow',quantity:1},{productId:'women-s-i-hate-cancer-women-s',size:'M',colour:'Black',ribbon:'Yellow',quantity:1}],delivery:{methodId:'tcg-door'},deliveryConfirmed:true,shippingTermsAccepted:true,customer:{name:'Sandbox Test',email:'sandbox-test@example.com',phone:'0820000000',street:'123 Test Street',unit:'',suburb:'Test Suburb',city:'Johannesburg',province:'Gauteng',postalCode:'2000'}};const response=await fetch('/sandbox/api/checkout',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(input)});const result=await response.json();if(!response.ok)throw Error(result.error||'Sandbox unavailable');if(result.action!=='https://sandbox.payfast.co.za/eng/process')throw Error('Expected Sandbox payment destination');const form=document.createElement('form');form.method='POST';form.action=result.action;for(const [name,value]of Object.entries(result.fields)){const field=document.createElement('input');field.type='hidden';field.name=name;field.value=value;form.appendChild(field);}document.body.appendChild(form);form.submit();}catch(error){document.getElementById('message').textContent=error.message;button.disabled=false;}};</script></html>`;
+ return new Response(page,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','referrer-policy':'no-referrer','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff'}});
+}
+
 function paymentReturn(request){
   const url=new URL(request.url),id=url.searchParams.get('order')||'',secret=url.searchParams.get('token')||'';
   const cancelled=url.pathname.endsWith('/cancel');
@@ -158,13 +195,14 @@ function paymentReturn(request){
 <style>body{font:18px/1.6 Arial;background:#111;color:#fff;max-width:740px;margin:40px auto;padding:24px}a{display:inline-block;color:#fff;padding:12px 18px;border:1px solid #aaa;margin:8px 8px 8px 0}pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;border-top:1px solid #555;padding-top:20px}#whatsapp{background:#126c3d}p{overflow-wrap:anywhere}</style>
 <h1>${cancelled?'Payment cancelled':'Checking your payment'}</h1><p id="paymentStatus">${cancelled?'Checking whether payment was received. Your cart has been saved.':'Please wait while we confirm payment with PayFast.'}</p><p id="reference"></p>
 <a id="return" href="${SHOP}/?resume_order=1${url.searchParams.get('checkout_test')==='1'?'&checkout_test=1':''}#christmas-clothing">Return to your saved cart</a><a id="whatsapp" hidden>Contact RIZE8 Wear on WhatsApp</a><pre id="receipt"></pre>
-<script>const order=${JSON.stringify(id).replace(/</g,'\\u003c')},token=${JSON.stringify(secret).replace(/</g,'\\u003c')},cancelled=${cancelled};let confirmed=false;async function check(){try{const r=await fetch('/api/order-receipt?order='+encodeURIComponent(order)+'&token='+encodeURIComponent(token));const d=await r.json();if(!r.ok)throw Error();confirmed=d.status==='paid';document.querySelector('h1').textContent=confirmed?'Payment confirmed':cancelled?'Payment cancelled':'Payment confirmation pending';document.getElementById('paymentStatus').textContent=confirmed?(d.sandbox?'TEST PAYMENT confirmed. No real payment was made.':d.testPayment?'Your R5 live test payment is confirmed. No T-shirt or delivery is included.':'Thank you! PayFast confirmed your payment. Your order has been recorded.'):(cancelled?'Payment has not been confirmed. You can edit your saved cart, try PayFast again or contact us for assistance. If money left your account, contact us before paying again.':'We are waiting for PayFast confirmation. Please do not pay again. Contact us if you need help.');document.getElementById('reference').textContent='Order reference: '+d.reference;document.getElementById('receipt').textContent=d.orderText;const link=document.getElementById('whatsapp');link.hidden=false;link.href='https://wa.me/27603709033?text='+encodeURIComponent('Please help with PayFast order reference '+d.reference);if(confirmed){document.getElementById('return').textContent='Continue shopping';document.getElementById('return').href=d.testPayment&&!d.storefrontTest?${JSON.stringify(SHOP)}:${JSON.stringify(SHOP)}+'/?payment_return=1'+(d.storefrontTest?'&checkout_test=1':'')+'&order='+encodeURIComponent(order)+'#christmas-clothing';if(!cancelled&&(!d.testPayment||d.storefrontTest))setTimeout(()=>location.replace(document.getElementById('return').href),1500);}}catch{document.getElementById('paymentStatus').textContent='We could not check payment yet. Please do not pay again if money left your account. Contact sales@rize8wear.co.za with reference '+order;const link=document.getElementById('whatsapp');link.hidden=false;link.href='https://wa.me/27603709033?text='+encodeURIComponent('Please help check PayFast payment reference '+order);}}check();setTimeout(()=>{if(!confirmed)check()},5000);setTimeout(()=>{if(!confirmed)check()},15000);</script></html>`;
+<script>const order=${JSON.stringify(id).replace(/</g,'\\u003c')},token=${JSON.stringify(secret).replace(/</g,'\\u003c')},cancelled=${cancelled};let confirmed=false;async function check(){try{const r=await fetch('/api/order-receipt?order='+encodeURIComponent(order)+'&token='+encodeURIComponent(token));const d=await r.json();if(!r.ok)throw Error();confirmed=d.status==='paid';document.querySelector('h1').textContent=confirmed?'Payment confirmed':cancelled?'Payment cancelled':'Payment confirmation pending';document.getElementById('paymentStatus').textContent=confirmed?(d.sandbox?'TEST PAYMENT confirmed. No real payment was made.':d.testPayment?'Your R5 live test payment is confirmed. No T-shirt or delivery is included.':'Thank you! PayFast confirmed your payment. Your order has been recorded.'):(cancelled?'Payment has not been confirmed. You can edit your saved cart, try PayFast again or contact us for assistance. If money left your account, contact us before paying again.':'We are waiting for PayFast confirmation. Please do not pay again. Contact us if you need help.');document.getElementById('reference').textContent='Order reference: '+d.reference;document.getElementById('receipt').textContent=d.orderText;const link=document.getElementById('whatsapp');link.hidden=false;link.href='https://wa.me/27603709033?text='+encodeURIComponent('Please help with PayFast order reference '+d.reference);if(confirmed){document.getElementById('return').textContent='Continue shopping';document.getElementById('return').href=d.testPayment&&!d.storefrontTest?${JSON.stringify(SHOP)}:${JSON.stringify(SHOP)}+'/?payment_return=1'+(d.storefrontTest?'&checkout_test=1':'')+'&order='+encodeURIComponent(order)+'#christmas-clothing';if(!cancelled&&!d.sandbox&&(!d.testPayment||d.storefrontTest))setTimeout(()=>location.replace(document.getElementById('return').href),1500);}}catch{document.getElementById('paymentStatus').textContent='We could not check payment yet. Please do not pay again if money left your account. Contact sales@rize8wear.co.za with reference '+order;const link=document.getElementById('whatsapp');link.hidden=false;link.href='https://wa.me/27603709033?text='+encodeURIComponent('Please help check PayFast payment reference '+order);}}check();setTimeout(()=>{if(!confirmed)check()},5000);setTimeout(()=>{if(!confirmed)check()},15000);</script></html>`;
   return new Response(page,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','referrer-policy':'no-referrer','x-content-type-options':'nosniff','x-robots-tag':'noindex, nofollow'}});
 }
 
 export default {async fetch(request,env){
   const url=new URL(request.url),origin=request.headers.get('Origin');let response;
   try{
+    if(url.pathname.startsWith('/sandbox/'))return await sandboxRoute(request,env);
     if(url.pathname.startsWith('/api/')){
       if(origin&&!ORIGINS.has(origin))return json({error:'Origin not allowed.'},403);
       if(request.method==='OPTIONS')response=new Response(null,{status:204});

@@ -6,17 +6,83 @@ import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
 import worker,{signature,parameterString,validateOrder,resolvePayfastIps} from './worker.mjs';
 import {md5} from './md5.mjs';
+import {reportMetaPurchase} from './meta-purchase.mjs';
 const origin='https://rize8wear.co.za',base='https://rize8wear-preview.grey-haven-7361.chatgpt.site';
 const networkFetch=globalThis.fetch;
 globalThis.fetch=(url,options)=>String(url).startsWith('https://cloudflare-dns.com/dns-query?')?Promise.resolve(new Response(JSON.stringify({Status:0,Answer:[{type:1,data:'197.97.145.144'},{type:1,data:'3.163.236.237'}]}))):networkFetch(url,options);
 const input=()=>({productId:'christmas-mom-jesus-is-the-reason',size:'M',colour:'Black',quantity:3,delivery:{methodId:'tcg-door'},deliveryConfirmed:true,shippingTermsAccepted:true,customer:{name:'Test Customer',email:'test@example.com',phone:'0820000000',street:'123 Example Street',unit:'',suburb:'Test Suburb',city:'Test City',province:'Gauteng',postalCode:'0001'}});
 function environment(){
- const db=new DatabaseSync(':memory:');db.exec(readFileSync(new URL('drizzle/0000_orders.sql',import.meta.url),'utf8'));
+ const db=new DatabaseSync(':memory:');for(const file of ['0000_orders.sql','0001_meta_purchase.sql'])db.exec(readFileSync(new URL('drizzle/'+file,import.meta.url),'utf8'));
  return {PAYFAST_MODE:'sandbox',PAYFAST_ENABLED:'true',DB:{prepare(sql){return {bind(...args){const statement=db.prepare(sql);return {async first(){return statement.get(...args);},async run(){return statement.run(...args);}};}}}},_db:db};
 }
-const checkout=(env,body=input())=>worker.fetch(new Request(base+'/api/checkout',{method:'POST',headers:{Origin:origin,'content-type':'application/json','CF-Connecting-IP':'127.0.0.1'},body:JSON.stringify(body)}),env);
+const checkout=(env,body=input())=>worker.fetch(new Request(base+'/api/checkout',{method:'POST',headers:{Origin:origin,'content-type':'application/json','CF-Connecting-IP':'127.0.0.1','User-Agent':'RIZE8 sandbox test browser'},body:JSON.stringify(body)}),env);
 const notify=(env,pairs,ip='197.97.145.144')=>worker.fetch(new Request(base+'/api/payfast/notify',{method:'POST',headers:{'CF-Connecting-IP':ip},body:new URLSearchParams(pairs).toString()}),env);
 function notification(id,overrides={}){const pairs=Object.entries({m_payment_id:id,pf_payment_id:'123456',payment_status:'COMPLETE',item_name:'RIZE8 test',amount_gross:'639.00',amount_fee:'-5.00',amount_net:'634.00',merchant_id:'10004002',...overrides});pairs.push(['signature',signature(pairs,'payfast',true)]);return pairs;}
+
+function enableMetaTest(env){Object.assign(env,{META_CAPI_ENABLED:'true',META_CAPI_MODE:'test',META_ACCESS_TOKEN:'unit-test-token-not-a-real-credential',META_TEST_EVENT_CODE:'TEST12345'});}
+async function mockMeta(action,{failures=0}={}){
+ const original=globalThis.fetch,calls=[];
+ globalThis.fetch=async(url,options)=>{
+  if(String(url).includes('/eng/query/validate'))return new Response('VALID');
+  if(String(url).startsWith('https://graph.facebook.com/')){calls.push({url:String(url),body:JSON.parse(options.body)});if(failures-->0)throw Error('network failure with sensitive upstream content');return new Response(JSON.stringify({events_received:1}));}
+  return original(url,options);
+ };
+ try{await action(calls);}finally{globalThis.fetch=original;}
+}
+
+test('verified COMPLETE sends one server Purchase with the paid ZAR amount and browser-compatible order ID',async()=>{
+ const env=environment();enableMetaTest(env);const order=await(await checkout(env)).json();
+ await mockMeta(async calls=>{
+  assert.equal((await notify(env,notification(order.orderId,{payment_status:'CANCELLED'}))).status,200);assert.equal(calls.length,0);
+  const wrong=notification(order.orderId);wrong.at(-1)[1]='0'.repeat(32);assert.equal((await notify(env,wrong)).status,400);assert.equal(calls.length,0);
+  assert.equal((await notify(env,notification(order.orderId))).status,200);assert.equal(calls.length,1);
+  const {url,body}=calls[0],event=body.data[0];assert.equal(url,'https://graph.facebook.com/v27.0/1928208843860853/events');assert(!url.includes(env.META_ACCESS_TOKEN));
+  assert.equal(body.test_event_code,'TEST12345');assert.equal(event.event_name,'Purchase');assert.equal(event.event_id,order.orderId);assert.equal(event.action_source,'website');assert.equal(event.event_source_url,origin+'/');
+  assert.deepEqual(event.custom_data,{value:639,currency:'ZAR'});assert.equal(event.event_time,Math.floor(env._db.prepare('SELECT paid_at FROM orders').get().paid_at/1000));
+  assert.equal(event.user_data.em[0],createHash('sha256').update('test@example.com').digest('hex'));assert.equal(event.user_data.client_user_agent,'RIZE8 sandbox test browser');assert(!JSON.stringify(event).includes('test@example.com'));assert(!JSON.stringify(event).includes('Christmas'));
+  assert.equal((await notify(env,notification(order.orderId))).status,200);assert.equal(calls.length,1);assert.equal(env._db.prepare('SELECT state FROM meta_purchase_events').get().state,'sent');
+ });
+});
+
+test('Meta outage preserves paid status and a verified ITN retry sends the same event once',async()=>{
+ const env=environment();enableMetaTest(env);const order=await(await checkout(env)).json();
+ await mockMeta(async calls=>{
+  assert.equal((await notify(env,notification(order.orderId))).status,503);assert.equal(env._db.prepare('SELECT status FROM orders').get().status,'paid');
+  const pending=env._db.prepare('SELECT state,last_error FROM meta_purchase_events').get();assert.equal(pending.state,'pending');assert.equal(pending.last_error,'meta_send_failed');
+  assert.equal((await notify(env,notification(order.orderId))).status,200);assert.equal(calls.length,2);assert.deepEqual(calls[0].body.data,calls[1].body.data);
+  assert.equal((await notify(env,notification(order.orderId))).status,200);assert.equal(calls.length,2);
+ },{failures:1});
+});
+
+test('concurrent delivery attempts acquire a single persistent send lease',async()=>{
+ const env=environment();enableMetaTest(env);const order=await(await checkout(env)).json();env._db.prepare("UPDATE orders SET status='paid',paid_at=?").run(Date.now());
+ await mockMeta(async calls=>{await Promise.all([reportMetaPurchase(order.orderId,env),reportMetaPurchase(order.orderId,env)]);assert.equal(calls.length,1);assert.equal(await reportMetaPurchase(order.orderId,env),true);assert.equal(calls.length,1);});
+});
+
+test('Sandbox requires Meta Test Events mode; live/test data cannot cross over',async()=>{
+ const env=environment();enableMetaTest(env);const order=await(await checkout(env)).json();env._db.prepare("UPDATE orders SET status='paid',paid_at=?").run(Date.now());
+ await mockMeta(async calls=>{
+  env.META_TEST_EVENT_CODE='';assert.equal(await reportMetaPurchase(order.orderId,env),false);assert.equal(calls.length,0);
+  env.META_CAPI_MODE='live';assert.equal(await reportMetaPurchase(order.orderId,env),true);assert.equal(calls.length,0);
+  env.META_CAPI_MODE='test';env.META_TEST_EVENT_CODE='TEST12345';env._db.prepare("UPDATE orders SET mode='live'").run();assert.equal(await reportMetaPurchase(order.orderId,env),true);assert.equal(calls.length,0);
+  env.META_CAPI_MODE='live';env.META_TEST_EVENT_CODE='';assert.equal(await reportMetaPurchase(order.orderId,env),true);assert.equal(calls.length,1);assert.equal(calls[0].body.test_event_code,undefined);
+ });
+});
+
+test('private Sandbox checkout and notifications stay isolated from live customer payments',async()=>{
+ const env=environment();enableMetaTest(env);Object.assign(env,{PAYFAST_MODE:'live',PAYFAST_MERCHANT_ID:'live-merchant',PAYFAST_MERCHANT_KEY:'live-key',META_CAPI_ENABLED:'false',PAYFAST_SANDBOX_ENABLED:'true',META_SANDBOX_TEST_EVENT_CODE:'TEST12345',PAYFAST_SANDBOX_TOKEN_HASH:createHash('sha256').update('b'.repeat(64)).digest('hex'),PAYFAST_SANDBOX_EXPIRES:new Date(Date.now()+3600000).toISOString()});
+ const makeRequest=body=>new Request(base+'/sandbox/api/checkout',{method:'POST',headers:{Origin:origin,'content-type':'application/json','User-Agent':'Sandbox browser'},body:JSON.stringify(body)});
+ assert.equal((await worker.fetch(makeRequest({...input(),testKey:'c'.repeat(64),attemptToken:'a'.repeat(64)}),env)).status,404);assert.equal(env._db.prepare('SELECT COUNT(*) AS n FROM orders').get().n,0);
+ const body={...input(),testKey:'b'.repeat(64),attemptToken:'a'.repeat(64)};
+ const response=await worker.fetch(makeRequest(body),env);assert.equal(response.status,200);const order=await response.json();assert.equal(order.action,'https://sandbox.payfast.co.za/eng/process');assert.equal(order.fields.merchant_id,'10004002');assert.equal(new URL(order.fields.notify_url).pathname,'/sandbox/api/payfast/notify');assert.equal(new URL(order.fields.return_url).pathname,'/sandbox/payment/return');assert.equal(env._db.prepare('SELECT mode FROM orders').get().mode,'sandbox');
+ await mockMeta(async calls=>{
+  assert.equal((await notify(env,notification(order.orderId))).status,400);assert.equal(calls.length,0);
+  const request=new Request(base+'/sandbox/api/payfast/notify',{method:'POST',headers:{'CF-Connecting-IP':'197.97.145.144'},body:new URLSearchParams(notification(order.orderId)).toString()});assert.equal((await worker.fetch(request,env)).status,200);assert.equal(calls.length,1);assert.equal(calls[0].body.test_event_code,'TEST12345');
+ });
+ const live=await(await checkout(env,{...input(),attemptToken:'a'.repeat(64)})).json();assert.equal(live.action,'https://www.payfast.co.za/eng/process');assert.notEqual(live.orderId,order.orderId);assert.equal(new URL(live.fields.notify_url).pathname,'/api/payfast/notify');
+ env.PAYFAST_SANDBOX_EXPIRES='2000-01-01T00:00:00Z';assert.equal((await worker.fetch(makeRequest(body),env)).status,404);
+ env.PAYFAST_SANDBOX_ENABLED='false';assert.equal((await worker.fetch(new Request(base+'/sandbox/'),env)).status,404);
+});
 test('MD5 matches Node for padding boundaries and Unicode',()=>{for(const value of ['','abc','a'.repeat(55),'a'.repeat(56),'a'.repeat(64),'a'.repeat(300),'Geseënde Kersfees'])assert.equal(md5(value),createHash('md5').update(value).digest('hex'));});
 test('callback source checks follow official DNS and fail closed when DNS is unavailable',async()=>{
  const urls=[];const ips=await resolvePayfastIps(async url=>{urls.push(url);return new Response(JSON.stringify({Status:0,Answer:[{type:1,data:'3.163.236.237'},{type:5,data:'alias.example'}]}));});
