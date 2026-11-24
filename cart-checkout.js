@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  if(returnParams.has('resume_order'))openCart();
  if(returnParams.has('payment_return')){
   const orderId=returnParams.get('order'),secret=paymentAttempt?.statusToken||paymentAttempt?.token;
-  if(secret)fetch(reviewApi+'/api/order-status?order='+encodeURIComponent(orderId)+'&token='+encodeURIComponent(secret),{signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).then(result=>{if(result?.status==='paid'){const expected=JSON.parse(paymentAttempt.fingerprint);if(JSON.stringify(cart)===JSON.stringify(expected.items)&&reference===expected.reference){cart=[];reference=null;}resetPaymentAttempt();persist();badge();dialog.querySelector('.cart-feedback').textContent='Your payment is confirmed. Thank you!';}else openCart();}).catch(()=>openCart());
+  if(secret)fetch(reviewApi+'/api/order-status?order='+encodeURIComponent(orderId)+'&token='+encodeURIComponent(secret),{signal:AbortSignal.timeout(10000)}).then(r=>r.ok?r.json():null).then(result=>{if(result?.status==='paid'){window.Rize8Purchase?.track(result);const expected=JSON.parse(paymentAttempt.fingerprint);if(JSON.stringify(cart)===JSON.stringify(expected.items)&&reference===expected.reference){cart=[];reference=null;}resetPaymentAttempt();persist();badge();renderCart();show('cart','Payment confirmed');dialog.querySelector('.cart-feedback').textContent='Your payment is confirmed. Thank you!';}else openCart();}).catch(()=>openCart());
   history.replaceState(null,'',location.pathname+location.hash);
  }
 });
