@@ -1,15 +1,15 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const shipping=require('../shipping-config.js'),cart=require('../cart-core.js');
-const products=new Map([['shirt',{id:'shirt',name:'Test shirt',audience:"Men's",price:250,colours:['Black','White']}]]);
+const products=new Map([['shirt',{id:'shirt',name:'Test shirt',audience:"Men's",price:199,colours:['Black','White']}]]);
 const items=quantity=>[{id:'a',productId:'shirt',size:'M',colour:'Black',quantity}];
 const contact={name:'TEST CUSTOMER',email:'test@example.com',phone:'0000000000'};
 const address={street:'1 TEST STREET',unit:'',suburb:'Test',city:'Test',province:'Gauteng',postalCode:'0001'};
 const openCollectionDate=new Date('2026-11-23T12:00:00Z');
-test('no delivery method means no automatic R99 charge',()=>{const order=cart.calculate(items(1),products);assert.equal(order.subtotalCents,25000);assert.equal(order.deliveryCents,0);assert.equal(order.deliverySelected,false);assert.equal(order.paymentReady,false);});
+test('no delivery method means no automatic R99 charge',()=>{const order=cart.calculate(items(1),products);assert.equal(order.subtotalCents,19900);assert.equal(order.deliveryCents,0);assert.equal(order.deliverySelected,false);assert.equal(order.paymentReady,false);});
 test('Alberton and Midrand collection are free and do not require or leak an address',()=>{
  for(const [methodId,quantity] of [['collect-alberton',1],['collect-midrand',3]]){
   const order=cart.calculate(items(quantity),products,methodId,openCollectionDate),delivery=shipping.validateDelivery({methodId},{...contact,...address},{confirmed:true,now:openCollectionDate});
-  assert.equal(order.deliveryCents,0);assert.equal(order.totalCents,quantity*25000);assert.equal(delivery.address,null);assert(!delivery.details.join(' ').includes(address.street));assert.equal(delivery.kind,'collection');
+  assert.equal(order.deliveryCents,0);assert.equal(order.totalCents,quantity*19900);assert.equal(delivery.address,null);assert(!delivery.details.join(' ').includes(address.street));assert.equal(delivery.kind,'collection');
  }
 });
 test('checkout offers only the two free collections and R99 door delivery; retired couriers are rejected',()=>{
@@ -21,20 +21,20 @@ test('checkout offers only the two free collections and R99 door delivery; retir
  }
 });
 test('multiple shirts incur one fixed door delivery fee and switching to free removes it',()=>{
- const door=cart.calculate(items(2),products,'tcg-door'),free=cart.calculate(items(2),products,'collect-midrand',openCollectionDate);assert.equal(door.totalCents,59900);assert.equal(door.deliveryCents,9900);assert.equal(free.totalCents,50000);
+ const door=cart.calculate(items(2),products,'tcg-door'),free=cart.calculate(items(2),products,'collect-midrand',openCollectionDate);assert.equal(door.totalCents,49700);assert.equal(door.deliveryCents,9900);assert.equal(free.totalCents,39800);
 });
 
 test('free shipping applies strictly over R1000 and recalculates after edits',()=>{
  const method=shipping.getMethod('tcg-door');
  for(const [subtotal,fee] of [[99999,9900],[100000,9900],[100001,0]])assert.equal(shipping.feeForSubtotal(method,subtotal),fee);
- for(const [quantity,deliveryCents,totalCents] of [[4,9900,109900],[5,0,125000],[4,9900,109900],[1,9900,34900]]){
+ for(const [quantity,deliveryCents,totalCents] of [[5,9900,109400],[6,0,119400],[5,9900,109400],[1,9900,29800]]){
   const order=cart.calculate(items(quantity),products,'tcg-door');assert.equal(order.deliveryCents,deliveryCents);assert.equal(order.delivery.feeCents,deliveryCents);assert.equal(order.totalCents,totalCents);
  }
 });
 
-test('free shipping uses the discounted Christmas subtotal',()=>{
- const christmas=new Map([['shirt',{...products.get('shirt'),price:199,bulkPrice:180,bulkMinimum:3,bulkGroup:'christmas'}]]);
- for(const [quantity,subtotal,fee] of [[5,90000,9900],[6,108000,0]]){
+test('free shipping uses the fixed R185 Christmas subtotal with no quantity discount',()=>{
+ const christmas=new Map([['shirt',{...products.get('shirt'),price:185}]]);
+ for(const [quantity,subtotal,fee] of [[5,92500,9900],[6,111000,0]]){
   const order=cart.calculate(items(quantity),christmas,'tcg-door');assert.equal(order.subtotalCents,subtotal);assert.equal(order.deliveryCents,fee);
  }
 });

@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const price=Number(card.dataset.price||card.querySelector('.launch-prices strong')?.textContent.replace(/[^0-9.]/g,'')||card.querySelector('.christmas-price')?.textContent.match(/R(\d+)/)?.[1]);
   if(!info||!name||!price||!card.dataset.productId)return;
   const audience=card.closest('[data-audience]')?.dataset.audience||'Christmas';
-  const product={id:card.dataset.productId,name,price,audience,cancer:card.hasAttribute('data-cancer'),ribbon:card.dataset.ribbon||'Yellow',colours:audience==='Christmas'?['Red','Black','White']:['White','Black'],bulkPrice:Number(card.dataset.bulkPrice)||0,bulkMinimum:Number(card.dataset.bulkMinimum)||3,bulkGroup:'christmas',personalised:audience==='Christmas'&&!name.includes('MERRY CHRISTMAS'),image:card.querySelector('img')?.getAttribute('src')||'',modelLabel:card.classList.contains('christmas-girl')?' (Kids example)':card.classList.contains('christmas-mom')?' (Adult example)':''};
+  const product={id:card.dataset.productId,name,price,audience,cancer:card.hasAttribute('data-cancer'),ribbon:card.dataset.ribbon||'Yellow',colours:audience==='Christmas'?['Red','Black','White']:['White','Black'],personalised:audience==='Christmas'&&!name.includes('MERRY CHRISTMAS'),image:card.querySelector('img')?.getAttribute('src')||'',modelLabel:card.classList.contains('christmas-girl')?' (Kids example)':card.classList.contains('christmas-mom')?' (Adult example)':''};
   if(!catalogue.has(product.id))catalogue.set(product.id,product);
   cards.push({card,info,product});
  });
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  <div class="order-ribbon-fields" hidden><label for="orderRibbon">Ribbon print</label><select id="orderRibbon" name="ribbon" disabled></select></div>
  <div class="cart-surname-fields" hidden><label for="orderSurname">Surname for printing (if applicable)</label><input id="orderSurname" name="personalisation" maxlength="100" placeholder="Your surname"></div>
  <label for="orderQuantity">Quantity</label><input id="orderQuantity" name="quantity" type="number" min="1" max="99" step="1" value="1" required>
- <p class="item-price order-total" aria-live="polite"></p><p class="order-help">Add this choice to your cart, then keep shopping for other designs or sizes. Choose free collection or a delivery option at checkout. Christmas shirts qualify for R180 each when your cart contains 3 or more Christmas shirts.</p>
+ <p class="item-price order-total" aria-live="polite"></p><p class="order-help">Add this choice to your cart, then keep shopping for other designs or sizes. Choose free collection or a delivery option at checkout. Christmas T-shirts are R185 each at every quantity.</p>
  <button class="order-now item-save" type="submit">ADD TO CART</button><button class="order-browse item-back" type="button">Back to cart</button><p class="item-error order-status" role="alert"></p></form></section>
  <section data-cart-view="cart" hidden><div class="cart-items"></div><div class="cart-totals"></div><p class="cart-error order-status" role="alert"></p><button type="button" class="order-now cart-checkout">CHECKOUT</button><button type="button" class="order-browse continue-shopping">Continue shopping</button><p class="order-help">Edit or remove any item before ordering. Review your complete order, then pay securely with PayFast.</p></section>
  <section data-cart-view="delivery" hidden><div class="checkout-summary"></div><button type="button" class="order-browse change-cart">Edit cart / add or remove items</button>
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   return box;
  }
  function drawSummary(target){const order=snapshot();syncDeliveryFees(order.subtotalCents);target.replaceChildren();for(const line of order.lines){const p=document.createElement('p');p.className='checkout-line';p.textContent=line.quantity+' × '+line.product.audience+' '+line.product.name+' · '+line.size+' · '+line.colour+(line.ribbon?' · '+line.ribbon+' ribbon':'')+(line.personalisation?' · '+line.personalisation:'')+' — '+core.money(line.lineCents);target.append(p);}target.append(totalsElement(order));}
- const linePriceText=line=>core.money(line.unitCents)+' each'+(line.discounted?' (Christmas 3+ price)':'')+' · '+core.money(line.lineCents);
+ const linePriceText=line=>core.money(line.unitCents)+' each · '+core.money(line.lineCents);
  function refreshCartTotals(){const order=snapshot();for(const row of dialog.querySelectorAll('.cart-line')){const line=order.lines.find(line=>line.id===row.dataset.lineId);if(line)row.querySelector('.cart-line-price').textContent=linePriceText(line);}dialog.querySelector('.cart-totals').replaceChildren(totalsElement(order));}
  function renderCart(){
   const order=snapshot(),list=dialog.querySelector('.cart-items');list.replaceChildren();
@@ -122,10 +122,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   const product=catalogue.get(design.value);if(!product)return;
   const valid=quantity.validity.valid;
   if(!valid){dialog.querySelector('.item-price').textContent='';return;}
-  const otherCount=cart.filter(line=>line.id!==editingId&&catalogue.get(line.productId)?.bulkPrice).reduce((sum,line)=>sum+line.quantity,0);
-  const discounted=product.bulkPrice&&otherCount+Number(quantity.value)>=product.bulkMinimum;
-  const unit=discounted?product.bulkPrice:product.price;
-  dialog.querySelector('.item-price').textContent=core.money(unit*100)+' each · This choice: '+core.money(unit*Number(quantity.value)*100)+(discounted?' (Christmas 3+ price)':'');
+  const unit=product.price;
+  dialog.querySelector('.item-price').textContent=core.money(unit*100)+' each · This choice: '+core.money(unit*Number(quantity.value)*100);
  }
  function openItem(product,line=null){
   editingId=line?.id||null;itemForm.reset();design.value=product.id;updateItemProduct();

@@ -31,14 +31,11 @@
   return next;
  }
  function calculate(cart,catalogue,deliveryMethodId=null,now=new Date()){
-  const groups=new Map();
   const valid=cart.map(line=>normaliseLine(line,catalogue));
-  for(const line of valid){const p=catalogue.get(line.productId);if(p.bulkPrice)groups.set(p.bulkGroup,(groups.get(p.bulkGroup)||0)+line.quantity);}
   const lines=valid.map(line=>{
    const product=catalogue.get(line.productId);
-   const discounted=!!product.bulkPrice&&(groups.get(product.bulkGroup)||0)>=product.bulkMinimum;
-   const unitCents=Math.round((discounted?product.bulkPrice:product.price)*100);
-   return {...line,product,discounted,unitCents,lineCents:unitCents*line.quantity};
+   const unitCents=Math.round(product.price*100);
+   return {...line,product,discounted:false,unitCents,lineCents:unitCents*line.quantity};
   });
   const method=lines.length&&deliveryMethodId?shipping.getMethod(deliveryMethodId,now):null;
   const subtotalCents=lines.reduce((sum,line)=>sum+line.lineCents,0),deliveryCents=method?shipping.feeForSubtotal(method,subtotalCents):0;
@@ -56,7 +53,7 @@
   return {...snapshot,testPayment:true,storefrontTest:true,originalTotalCents:snapshot.totalCents,testDiscountCents:snapshot.totalCents-500,totalCents:500};
  }
  function itemText(line,index){
-  return [(index+1)+'. '+line.product.audience+' '+line.product.name,'Size: '+line.size+' | Colour: '+line.colour,...(line.ribbon?['Ribbon print: '+line.ribbon]:[]),...(line.personalisation?['Surname for printing: '+line.personalisation]:[]),'Quantity: '+line.quantity+' | Unit price: '+money(line.unitCents)+(line.discounted?' (Christmas 3+ price)':''),'Item total: '+money(line.lineCents)].join('\n');
+  return [(index+1)+'. '+line.product.audience+' '+line.product.name,'Size: '+line.size+' | Colour: '+line.colour,...(line.ribbon?['Ribbon print: '+line.ribbon]:[]),...(line.personalisation?['Surname for printing: '+line.personalisation]:[]),'Quantity: '+line.quantity+' | Unit price: '+money(line.unitCents),'Item total: '+money(line.lineCents)].join('\n');
  }
  function regularOrderText(snapshot,details,reference){
   if(!snapshot.lines.length)throw Error('Add a T-shirt to your cart first.');

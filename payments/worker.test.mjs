@@ -7,6 +7,7 @@ import {Script} from 'node:vm';
 import worker,{signature,parameterString,validateOrder,resolvePayfastIps} from './worker.mjs';
 import {md5} from './md5.mjs';
 import {reportMetaPurchase} from './meta-purchase.mjs';
+import {catalogue} from './catalogue.mjs';
 const origin='https://rize8wear.co.za',base='https://rize8wear-preview.grey-haven-7361.chatgpt.site';
 const networkFetch=globalThis.fetch;
 globalThis.fetch=(url,options)=>String(url).startsWith('https://cloudflare-dns.com/dns-query?')?Promise.resolve(new Response(JSON.stringify({Status:0,Answer:[{type:1,data:'197.97.145.144'},{type:1,data:'3.163.236.237'}]}))):networkFetch(url,options);
@@ -17,7 +18,7 @@ function environment(){
 }
 const checkout=(env,body=input())=>worker.fetch(new Request(base+'/api/checkout',{method:'POST',headers:{Origin:origin,'content-type':'application/json','CF-Connecting-IP':'127.0.0.1','User-Agent':'RIZE8 sandbox test browser'},body:JSON.stringify(body)}),env);
 const notify=(env,pairs,ip='197.97.145.144')=>worker.fetch(new Request(base+'/api/payfast/notify',{method:'POST',headers:{'CF-Connecting-IP':ip},body:new URLSearchParams(pairs).toString()}),env);
-function notification(id,overrides={}){const pairs=Object.entries({m_payment_id:id,pf_payment_id:'123456',payment_status:'COMPLETE',item_name:'RIZE8 test',amount_gross:'639.00',amount_fee:'-5.00',amount_net:'634.00',merchant_id:'10004002',...overrides});pairs.push(['signature',signature(pairs,'payfast',true)]);return pairs;}
+function notification(id,overrides={}){const pairs=Object.entries({m_payment_id:id,pf_payment_id:'123456',payment_status:'COMPLETE',item_name:'RIZE8 test',amount_gross:'654.00',amount_fee:'-5.00',amount_net:'649.00',merchant_id:'10004002',...overrides});pairs.push(['signature',signature(pairs,'payfast',true)]);return pairs;}
 
 function enableMetaTest(env){Object.assign(env,{META_CAPI_ENABLED:'true',META_CAPI_MODE:'test',META_ACCESS_TOKEN:'unit-test-token-not-a-real-credential',META_TEST_EVENT_CODE:'TEST12345'});}
 async function mockMeta(action,{failures=0}={}){
@@ -38,7 +39,7 @@ test('verified COMPLETE sends one server Purchase with the paid ZAR amount and b
   assert.equal((await notify(env,notification(order.orderId))).status,200);assert.equal(calls.length,1);
   const {url,body}=calls[0],event=body.data[0];assert.equal(url,'https://graph.facebook.com/v27.0/1928208843860853/events');assert(!url.includes(env.META_ACCESS_TOKEN));
   assert.equal(body.test_event_code,'TEST12345');assert.equal(event.event_name,'Purchase');assert.equal(event.event_id,order.orderId);assert.equal(event.action_source,'website');assert.equal(event.event_source_url,origin+'/');
-  assert.deepEqual(event.custom_data,{value:639,currency:'ZAR'});assert.equal(event.event_time,Math.floor(env._db.prepare('SELECT paid_at FROM orders').get().paid_at/1000));
+  assert.deepEqual(event.custom_data,{value:654,currency:'ZAR'});assert.equal(event.event_time,Math.floor(env._db.prepare('SELECT paid_at FROM orders').get().paid_at/1000));
   assert.equal(event.user_data.em[0],createHash('sha256').update('test@example.com').digest('hex'));assert.equal(event.user_data.client_user_agent,'RIZE8 sandbox test browser');assert(!JSON.stringify(event).includes('test@example.com'));assert(!JSON.stringify(event).includes('Christmas'));
   assert.equal((await notify(env,notification(order.orderId))).status,200);assert.equal(calls.length,1);assert.equal(env._db.prepare('SELECT state FROM meta_purchase_events').get().state,'sent');
  });
@@ -90,7 +91,7 @@ test('callback source checks follow official DNS and fail closed when DNS is una
  await assert.rejects(resolvePayfastIps(async()=>new Response('Unavailable',{status:503})),/source validation temporarily unavailable/);
 });
 test('PayFast encoding uses PHP form encoding and documented ordering',()=>{assert.equal(parameterString([['name','Test !~()*'],['empty','']]),'name=Test+%21%7E%28%29%2A');const pairs=[['name','Test User'],['amount','639.00']];assert.equal(signature(pairs,'phrase'),createHash('md5').update('name=Test+User&amount=639.00&passphrase=phrase').digest('hex'));});
-test('server prices ignore client amounts and enforce three-shirt deal',()=>{for(const [qty,expected] of [[1,29800],[2,49700],[3,63900]])assert.equal(validateOrder({...input(),quantity:qty,unitCents:1,totalCents:1}).totalCents,expected);assert.throws(()=>validateOrder({...input(),colour:'Green'}));assert.throws(()=>validateOrder({...input(),quantity:-1}));assert.throws(()=>validateOrder({...input(),productId:'fake'}));assert.throws(()=>validateOrder({...input(),deliveryConfirmed:false}));});
+test('server prices ignore client overrides and keep Christmas at R185 for every quantity',()=>{for(const [qty,expected] of [[1,28400],[2,46900],[3,65400]])assert.equal(validateOrder({...input(),quantity:qty,unitCents:1,totalCents:1}).totalCents,expected);assert.throws(()=>validateOrder({...input(),colour:'Green'}));assert.throws(()=>validateOrder({...input(),quantity:-1}));assert.throws(()=>validateOrder({...input(),productId:'fake'}));assert.throws(()=>validateOrder({...input(),deliveryConfirmed:false}));});
 test('disabled checkout cannot collect an order',async()=>{const env=environment();env.PAYFAST_ENABLED='false';assert.equal((await checkout(env)).status,503);assert.equal(env._db.prepare('SELECT COUNT(*) AS n FROM orders').get().n,0);});
 
 test('delivery terms require explicit acknowledgement before payment and are stored with the order',async()=>{
@@ -104,11 +105,23 @@ test('delivery terms require explicit acknowledgement before payment and are sto
  const saved=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);
  assert.equal(saved.shippingTermsAccepted,true);assert.equal(saved.shippingTermsVersion,'2026-11-23');
 });
-test('men, women and cancer orders use R250 each without a bulk discount',()=>{
- for(const productId of ['men-s-outshine-the-darkness','women-s-christian-chick','men-s-i-hate-cancer-men-s']){
-  for(const [quantity,total] of [[1,34900],[2,59900],[3,84900]]){
+test('men, women, cancer and drug orders use R199 each without a bulk discount',()=>{
+ for(const productId of ['men-s-outshine-the-darkness','women-s-christian-chick','men-s-i-hate-cancer-men-s','drug-recovery-is-possible']){
+  for(const [quantity,total] of [[1,29800],[2,49700],[3,69600]]){
    const order=validateOrder({...input(),productId,quantity,ribbon:'Yellow',totalCents:1});
    assert.equal(order.totalCents,total);assert.equal(order.deliveryCents,9900);
+  }
+ }
+});
+
+test('every catalogue product uses the approved flat price even when clients submit old bulk offers',()=>{
+ for(const product of Object.values(catalogue)){
+  for(const quantity of [1,3,7]){
+   const expectedUnitCents=product.christmas?18500:19900;
+   const order=validateOrder({...input(),productId:product.id,quantity,ribbon:'Yellow',price:1,bulkPrice:1,bulkMinimum:1});
+   assert.equal(order.lines[0].unitCents,expectedUnitCents,product.id);
+   assert.equal(order.subtotalCents,expectedUnitCents*quantity,product.id);
+   assert.equal(order.lines[0].discounted,false,product.id);
   }
  }
 });
@@ -117,15 +130,15 @@ test('regular shirts accept white or black; Christmas retains red',()=>{
  assert.equal(validateOrder({...input(),productId:'women-s-christian-chick',colour:'White'}).colour,'White');
  assert.equal(validateOrder({...input(),colour:'Red'}).colour,'Red');
 });
-test('checkout records pending payment and protects customer data',async()=>{const env=environment(),result=await(await checkout(env)).json();assert.equal(result.fields.amount,'639.00');assert.equal(result.action,'https://sandbox.payfast.co.za/eng/process');assert.equal(env._db.prepare('SELECT status FROM orders').get().status,'awaiting_payment');let r=await worker.fetch(new Request(base+'/api/order-status?order='+result.orderId+'&token='+'a'.repeat(64)),env);assert.equal(r.status,404);r=await worker.fetch(new Request(base+'/api/order-status?order='+result.orderId+'&token='+result.token),env);const state=await r.json();assert.equal(state.status,'awaiting_payment');assert(!JSON.stringify(state).includes('test@example.com'));});
+test('checkout records pending payment and protects customer data',async()=>{const env=environment(),result=await(await checkout(env)).json();assert.equal(result.fields.amount,'654.00');assert.equal(result.action,'https://sandbox.payfast.co.za/eng/process');assert.equal(env._db.prepare('SELECT status FROM orders').get().status,'awaiting_payment');let r=await worker.fetch(new Request(base+'/api/order-status?order='+result.orderId+'&token='+'a'.repeat(64)),env);assert.equal(r.status,404);r=await worker.fetch(new Request(base+'/api/order-status?order='+result.orderId+'&token='+result.token),env);const state=await r.json();assert.equal(state.status,'awaiting_payment');assert(!JSON.stringify(state).includes('test@example.com'));});
 test('ITN rejects bad sources, signatures, wrong amounts and server rejection',async()=>{const env=environment(),order=await(await checkout(env)).json();assert.equal((await notify(env,notification(order.orderId),'127.0.0.1')).status,403);const tampered=notification(order.orderId);tampered[tampered.length-1][1]='0'.repeat(32);assert.equal((await notify(env,tampered)).status,400);assert.equal((await notify(env,notification(order.orderId,{amount_gross:'1.00'}))).status,400);const original=globalThis.fetch;try{globalThis.fetch=async()=>new Response('INVALID');assert.equal((await notify(env,notification(order.orderId))).status,400);}finally{globalThis.fetch=original;}assert.equal(env._db.prepare('SELECT status FROM orders').get().status,'awaiting_payment');});
 test('only confirmed COMPLETE ITN marks paid; duplicate notifications are safe',async()=>{const env=environment(),order=await(await checkout(env)).json(),original=globalThis.fetch;try{globalThis.fetch=async()=>new Response('VALID');assert.equal((await notify(env,notification(order.orderId,{payment_status:'CANCELLED'}))).status,200);assert.equal(env._db.prepare('SELECT status FROM orders').get().status,'awaiting_payment');assert.equal((await notify(env,notification(order.orderId))).status,200);assert.equal(env._db.prepare('SELECT status FROM orders').get().status,'paid');assert.equal((await notify(env,notification(order.orderId))).status,200);}finally{globalThis.fetch=original;}});
 test('browser return URL cannot mark a pending order paid',async()=>{const env=environment(),order=await(await checkout(env)).json();assert.equal((await worker.fetch(new Request(base+'/payment/return?order='+order.orderId+'&token='+order.token),env)).status,200);assert.equal(env._db.prepare('SELECT status FROM orders').get().status,'awaiting_payment');});
 
 test('server combines designs, derives shipping from configuration and stores free collection',async()=>{
  const env=environment(),body={...input(),items:[{productId:'men-s-i-hate-cancer-men-s',size:'M',colour:'Black',ribbon:'Yellow',quantity:1},{productId:'women-s-i-hate-cancer-women-s',size:'L',colour:'White',ribbon:'Purple',quantity:1}],delivery:{methodId:'collect-alberton',feeCents:99999},deliveryCents:1,totalCents:1};
- const order=validateOrder(body);assert.equal(order.totalCents,50000);assert.equal(order.deliveryCents,0);assert.equal(order.lines.length,2);assert.equal(order.customer.street,undefined);
- const result=await(await checkout(env,body)).json();assert.equal(result.fields.amount,'500.00');const record=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);assert.equal(record.delivery.methodId,'collect-alberton');assert.equal(record.lines.length,2);
+ const order=validateOrder(body);assert.equal(order.totalCents,39800);assert.equal(order.deliveryCents,0);assert.equal(order.lines.length,2);assert.equal(order.customer.street,undefined);
+ const result=await(await checkout(env,body)).json();assert.equal(result.fields.amount,'398.00');const record=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);assert.equal(record.delivery.methodId,'collect-alberton');assert.equal(record.lines.length,2);
 });
 test('retired couriers cannot create a review or payment request',async()=>{
  const env=environment();
@@ -144,7 +157,7 @@ test('server rejects missing method or confirmation and recalculates door delive
 });
 
 test('PayFast and saved delivery charge use the server-priced free-shipping threshold',async()=>{
- for(const [quantity,fee,total] of [[4,9900,109900],[5,0,125000]]){
+ for(const [quantity,fee,total] of [[5,9900,109400],[6,0,119400]]){
   const env=environment(),body={...input(),productId:'men-s-outshine-the-darkness',quantity,subtotalCents:100001,deliveryCents:0,delivery:{methodId:'tcg-door',feeCents:0}};
   const order=validateOrder(body);assert.equal(order.deliveryCents,fee);assert.equal(order.delivery.feeCents,fee);assert.equal(order.totalCents,total);
   const response=await checkout(env,body);assert.equal(response.status,200);assert.equal((await response.json()).fields.amount,(total/100).toFixed(2));
@@ -160,7 +173,7 @@ test('server rejects Midrand collection during its holiday closure',()=>{
 });
 
 test('payment retries reuse one pending record and reject changed or paid orders',async()=>{
- const env=environment(),body={...input(),reference:'R8-261123-0123456789ABCDEF',attemptToken:'ab'.repeat(32),expectedTotalCents:63900};
+ const env=environment(),body={...input(),reference:'R8-261123-0123456789ABCDEF',attemptToken:'ab'.repeat(32),expectedTotalCents:65400};
  const first=await(await checkout(env,body)).json(),again=await(await checkout(env,body)).json();
  assert.equal(first.orderId,again.orderId);assert.equal(first.token,again.token);assert.equal(env._db.prepare('SELECT COUNT(*) AS n FROM orders').get().n,1);
  assert.equal(first.fields.custom_str5,body.reference);assert.match(first.fields.custom_str2,/\/r\/R8-PF-/);
@@ -173,7 +186,7 @@ test('receipt protects full order details with an unguessable token',async()=>{
  const env=environment(),body={...input(),reference:'R8-261123-0123456789ABCDEF'},result=await(await checkout(env,body)).json();
  assert.equal((await worker.fetch(new Request(base+'/api/order-receipt?order='+result.orderId+'&token='+'0'.repeat(64)),env)).status,404);
  const receipt=await(await worker.fetch(new Request(base+'/api/order-receipt?order='+result.orderId+'&token='+result.token),env)).json();
- assert.equal(receipt.reference,body.reference);assert.match(receipt.orderText,/test@example.com/);assert.match(receipt.orderText,/Size: M/);assert.match(receipt.orderText,/TOTAL: R639/);
+ assert.equal(receipt.reference,body.reference);assert.match(receipt.orderText,/test@example.com/);assert.match(receipt.orderText,/Size: M/);assert.match(receipt.orderText,/TOTAL: R654/);
  const page=await(await worker.fetch(new Request(base+'/payment/cancel?order='+result.orderId+'&token='+result.token),env)).text();assert.match(page,/wa.me\/27603709033/);assert.match(page,/resume_order=1/);assert.match(page,/api\/order-receipt/);
  assert.doesNotThrow(()=>new Script(page.match(/<script>([\s\S]*?)<\/script>/)[1]));
  const success=await(await worker.fetch(new Request(base+'/payment/return?order='+result.orderId+'&token='+result.token),env)).text();assert.doesNotThrow(()=>new Script(success.match(/<script>([\s\S]*?)<\/script>/)[1]));
@@ -204,13 +217,13 @@ test('R5 storefront test uses real selections and delivery while preserving norm
  assert.equal((await pay({...body,deliveryConfirmed:false})).status,400);
  assert.equal((await pay({...body,shippingTermsAccepted:false})).status,400);
  assert.equal((await pay({...body,customer:{...body.customer,street:''}})).status,400);
- const checked=await(await review(body)).json();assert.equal(checked.order.totalCents,500);assert.equal(checked.order.originalTotalCents,59900);assert.equal(checked.order.testDiscountCents,59400);assert.equal(checked.order.lines.length,2);
+ const checked=await(await review(body)).json();assert.equal(checked.order.totalCents,500);assert.equal(checked.order.originalTotalCents,49700);assert.equal(checked.order.testDiscountCents,49200);assert.equal(checked.order.lines.length,2);
  assert.equal(checked.order.deliveryCents,9900);assert.equal(checked.order.customer.street,'123 Example Street');
  const result=await(await pay({...body,totalCents:1,expectedTotalCents:500})).json();assert.equal(result.fields.amount,'5.00');assert.equal(result.fields.item_name,'RIZE8 R5 LIVE CHECKOUT TEST');
  const stored=JSON.parse(env._db.prepare('SELECT details_json FROM orders').get().details_json);assert.equal(stored.storefrontTest,true);assert.equal(stored.lines.length,2);assert.equal(stored.lines[1].ribbon,'Purple');
  const retry=await(await pay(body)).json();assert.equal(retry.orderId,result.orderId);
  const edited={...body,attemptToken:'ac'.repeat(32),items:body.items.slice(0,1)};const editedResult=await(await pay(edited)).json();assert.notEqual(editedResult.orderId,result.orderId);assert.equal(editedResult.fields.amount,'5.00');
- const regular=await(await checkout(env,{...body,testPayment:true,totalCents:500})).json();assert.equal(regular.fields.amount,'599.00');
+ const regular=await(await checkout(env,{...body,testPayment:true,totalCents:500})).json();assert.equal(regular.fields.amount,'497.00');
  const receipt=await(await worker.fetch(new Request(base+'/api/order-receipt?order='+result.orderId+'&token='+result.token),env)).json();assert.match(receipt.orderText,/Purple/);assert.match(receipt.orderText,/123 Example Street/);assert.match(receipt.orderText,/TEST PAYMENT TOTAL: R5/);assert.equal(receipt.storefrontTest,true);
  const redirect=await worker.fetch(new Request(base+'/payment/test?key='+testKey),env);assert.equal(redirect.status,303);assert.equal(redirect.headers.get('location'),origin+'/#checkout-test='+testKey);
  const original=globalThis.fetch;try{globalThis.fetch=async()=>new Response('VALID');assert.equal((await notify(env,notification(result.orderId,{amount_gross:'5.00',amount_fee:'-1.00',amount_net:'4.00'}))).status,200);}finally{globalThis.fetch=original;}

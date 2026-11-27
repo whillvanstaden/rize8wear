@@ -5,15 +5,12 @@ export const catalogue = {
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,
-    "price": 199,
+    "price": 185,
     "colours": [
       "Red",
       "Black",
       "White"
     ],
-    "bulkPrice": 180,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": true
   },
   "christmas-dad-botha-kersfeesbende": {
@@ -22,15 +19,12 @@ export const catalogue = {
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,
-    "price": 199,
+    "price": 185,
     "colours": [
       "Red",
       "Black",
       "White"
     ],
-    "bulkPrice": 180,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": true
   },
   "christmas-kids-jesus-is-the-reason": {
@@ -39,15 +33,12 @@ export const catalogue = {
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,
-    "price": 199,
+    "price": 185,
     "colours": [
       "Red",
       "Black",
       "White"
     ],
-    "bulkPrice": 180,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": true
   },
   "christmas-geseende-kersfees-le-roux-familie": {
@@ -56,15 +47,12 @@ export const catalogue = {
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,
-    "price": 199,
+    "price": 185,
     "colours": [
       "Red",
       "Black",
       "White"
     ],
-    "bulkPrice": 180,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": true
   },
   "christmas-smith-family-matching-christmas-t-shirts": {
@@ -73,15 +61,12 @@ export const catalogue = {
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,
-    "price": 199,
+    "price": 185,
     "colours": [
       "Red",
       "Black",
       "White"
     ],
-    "bulkPrice": 180,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": true
   },
   "christmas-smith-family-white-christmas-t-shirts": {
@@ -90,15 +75,12 @@ export const catalogue = {
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,
-    "price": 199,
+    "price": 185,
     "colours": [
       "Red",
       "Black",
       "White"
     ],
-    "bulkPrice": 180,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": true
   },
   "christmas-merry-christmas-women": {
@@ -107,15 +89,12 @@ export const catalogue = {
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,
-    "price": 199,
+    "price": 185,
     "colours": [
       "Red",
       "Black",
       "White"
     ],
-    "bulkPrice": 180,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "christmas-merry-christmas-men": {
@@ -124,15 +103,12 @@ export const catalogue = {
     "audience": "Christmas",
     "cancer": false,
     "christmas": true,
-    "price": 199,
+    "price": 185,
     "colours": [
       "Red",
       "Black",
       "White"
     ],
-    "bulkPrice": 180,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-i-hate-cancer-men-s": {
@@ -141,14 +117,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": true,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-i-hate-cancer-women-s": {
@@ -157,14 +130,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": true,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "drug-recovery-is-possible": {
@@ -173,14 +143,11 @@ export const catalogue = {
     "audience": "Drug Abuse Awareness",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "drug-say-no-be-happy": {
@@ -189,14 +156,11 @@ export const catalogue = {
     "audience": "Drug Abuse Awareness",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "drug-your-life-matters": {
@@ -205,14 +169,11 @@ export const catalogue = {
     "audience": "Drug Abuse Awareness",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "drug-just-say-no": {
@@ -221,14 +182,11 @@ export const catalogue = {
     "audience": "Drug Abuse Awareness",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-outshine-the-darkness": {
@@ -237,14 +195,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-jesus-freak": {
@@ -253,14 +208,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-beloved-chosen-still-learning": {
@@ -269,14 +221,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-rize-8-wear": {
@@ -285,14 +234,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-the-joy-of-the-lord-is-my-strength": {
@@ -301,14 +247,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-proudly-christian": {
@@ -317,14 +260,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-christian-chick": {
@@ -333,14 +273,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-outshine-the-darkness": {
@@ -349,14 +286,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-make-space-for-joy": {
@@ -365,14 +299,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-cross": {
@@ -381,14 +312,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-gospel-gangsta": {
@@ -397,14 +325,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-the-joy-of-the-lord-is-my-strength": {
@@ -413,14 +338,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-jesus": {
@@ -429,14 +351,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-anti-bullying": {
@@ -445,14 +364,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "men-s-good-vibes-only": {
@@ -461,14 +377,11 @@ export const catalogue = {
     "audience": "Men's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-make-space-for-joy": {
@@ -477,14 +390,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-positive-mindset": {
@@ -493,14 +403,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-good-vibes-only": {
@@ -509,14 +416,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-trust-god": {
@@ -525,14 +429,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-beloved-chosen-still-learning": {
@@ -541,14 +442,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   },
   "women-s-love-wins": {
@@ -557,14 +455,11 @@ export const catalogue = {
     "audience": "Women's",
     "cancer": false,
     "christmas": false,
-    "price": 250,
+    "price": 199,
     "colours": [
       "White",
       "Black"
     ],
-    "bulkPrice": 0,
-    "bulkMinimum": 3,
-    "bulkGroup": "christmas",
     "personalised": false
   }
 };
